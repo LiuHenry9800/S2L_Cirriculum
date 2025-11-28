@@ -13,104 +13,6 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, AutoModelForSeq2Se
 
 from consts import *
 
-
-## ALPACA-STYLE PROMPT: forked from https://github.com/tatsu-lab/stanford_alpaca
-class Prompter(object):
-    __slots__ = ("template", "_verbose")
-    def __init__(self, template_name: str = "", verbose: bool = False):
-        self._verbose = verbose
-        if not template_name:
-            # Enforce the default here, so the constructor can be called with '' and will not break.
-            template_name = "alpaca"
-        file_name = os.path.join("templates", f"{template_name}.json")
-        if not os.path.exists(file_name):
-            raise ValueError(f"Can't read {file_name}")
-        with open(file_name) as fp:
-            self.template = json.load(fp)
-        if self._verbose:
-            print(
-                f"Using prompt template {template_name}: {self.template['description']}"
-            )
-
-    def generate_prompt(
-        self,
-        instruction: str,
-        input: Union[None, str] = None,
-        label: Union[None, str] = None,
-    ) -> str:
-        # returns the full prompt from instruction and optional input
-        # if a label (=response, =output) is provided, it's also appended.
-        if input:
-            res = self.template["prompt_input"].format(
-                instruction=instruction, input=input
-            )
-        else:
-            res = self.template["prompt_no_input"].format(
-                instruction=instruction
-            )
-        if label:
-            res = f"{res}{label}"
-        if self._verbose:
-            print(res)
-        return res
-
-    def get_response(self, output: str) -> str:
-        return output.split(self.template["response_split"])[1].strip()
-
-def tokenize(tokenizer, cutoff_len, prompt, add_eos_token=True):
-    # there's probably a way to do this with the tokenizer settings
-    # but again, gotta move fast
-    result = tokenizer(
-        prompt,
-        truncation=True,
-        max_length=cutoff_len,
-        padding=False,
-        return_tensors=None,
-    )
-    if (
-        result["input_ids"][-1] != tokenizer.eos_token_id
-        and len(result["input_ids"]) < cutoff_len
-        and add_eos_token
-    ):
-        result["input_ids"].append(tokenizer.eos_token_id)
-        result["attention_mask"].append(1)
-    result["labels"] = result["input_ids"].copy()  # labels = input_ids -> training decoder
-    return result
-
-def generate_and_tokenize_prompt(tokenizer, cutoff_len, prompter, train_on_inputs, add_eos_token, data_point):
-    full_prompt = prompter.generate_prompt(
-        instruction=data_point["instruction"],
-        input=data_point["input"],
-        label=data_point["output"],
-    )
-    tokenized_full_prompt = tokenize(tokenizer=tokenizer,
-                                     cutoff_len=cutoff_len,
-                                     prompt=full_prompt,
-                                     add_eos_token=True)  # default
-    if not train_on_inputs:
-        user_prompt = prompter.generate_prompt(
-            data_point["instruction"], data_point["input"]
-        )
-        tokenized_user_prompt = tokenize(tokenizer=tokenizer,
-                                        cutoff_len=cutoff_len,
-                                        prompt=user_prompt,
-                                        add_eos_token=True
-                                        )
-        user_prompt_len = len(tokenized_user_prompt["input_ids"])
-        if add_eos_token:
-            user_prompt_len -= 1
-        tokenized_full_prompt["labels"] = [
-            -100
-        ] * user_prompt_len + tokenized_full_prompt["labels"][
-            user_prompt_len:
-        ]  # could be sped up, probably
-    return tokenized_full_prompt
-
-def get_prompter(prompt_template_name):
-    prompter = Prompter(prompt_template_name)
-    return prompter
-
-
 ## GET & FIX TOKENIZERS
 def get_tokenizer(model_name_or_path, cache_dir, model_max_length, ):
     tokenizer = AutoTokenizer.from_pretrained(
@@ -286,33 +188,6 @@ def get_model(model_name_or_path, cache_dir=None):
     else:
         model = AutoModelForCausalLM.from_pretrained(model_name_or_path, cache_dir=cache_dir)
     return model
-
-
-## WHITENINING
-def compute_kernel_bias(batch_hidden_states):
-    """for final transformation: y = (x + bias).dot(kernel)
-    batched_hidden_states .shape = (batch_size, hidden_dim)
-    """
-    mu = batch_hidden_states.mean(axis=0, keepdims=True)  # (1, hidden_dim)
-    cov = torch.cov(batch_hidden_states.t())  # (hidden_dim, hidden_dim)
-    u, s, vh = torch.linalg.svd(cov)  # u.shape = (hidden_dim, hidden_dim)  s.shape = (hidden_dim)  vh.shape = (hidden_dim, hidden_dim)
-    W = torch.mm(u, torch.diag(1/torch.sqrt(s)))  # (hidden_dim, hidden_dim)
-    # kernel = W  # (hidden_dim, hidden_dim)
-    # bias = -mu  # (batch_size, hidden_dim)
-    return W, -mu
-
-def normalize(batch_hidden_states):
-    return batch_hidden_states / (batch_hidden_states**2).sum(dim=1, keepdims=True)**0.5
-
-def transform_and_normalize(batch_hidden_states, kernel, bias):
-    """apply transformation & normalization
-    batched_hidden_states .shape = (batch_size, hidden_dim)
-    kernel .shape = (hidden_dim, hidden_dim) --> 取N_COMPONENTS后 (emb_dim, n_dim)
-    bias .shape = (batch_size, hidden_dim) 
-    """
-    if not (kernel is None or bias is None):
-        transformed_batch_hidden_states = torch.mm((batch_hidden_states + bias), kernel)  # (batch_size, n_dim)
-    return normalize(transformed_batch_hidden_states)  # (batch_size, n_dim)
 
 
 ## JSON - LOAD/DUMP: forked from https://github.com/tatsu-lab/stanford_alpaca
