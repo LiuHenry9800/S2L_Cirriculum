@@ -48,6 +48,7 @@ def evaluate_model_accuracy(model_path,dataset_path,start_idx,end_idx):
 
     prompt_formatter = PROMPT_DICT["prompt_no_input"]
 
+    grand_total=0
     for example in dataset:
         instruction = example["instruction"]
         ans = example["output"]
@@ -83,10 +84,10 @@ def evaluate_model_accuracy(model_path,dataset_path,start_idx,end_idx):
             total+=1
         source_accuracies[source] = (correct,total)
 
-        curr_total+=1
-        if(curr_total % 500 == 0):
+        grand_total+=1
+        if(grand_total % 500 == 0):
             print("Sanity check: ")
-            print("idx: ",curr_total,"prompt: ",prompt)
+            print("idx: ",grand_total,"prompt: ",prompt)
             print("model pred answer: ",pred_ans, "actual answer: ",ans)
             print("Summary: ")
             for source in source_accuracies:
