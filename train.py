@@ -54,7 +54,9 @@ def main(config_file):
     if torch.cuda.is_available():
         rank0_print(f'*** GPU Name: {torch.cuda.get_device_name(0)}')
         rank0_print(f'*** Model Device: {next(model.parameters()).device}')
-    
+        model = model.to('cuda')
+        rank0_print(f'*** Model moved to: {next(model.parameters()).device}')
+
     tokenizer, special_tokens_dict = get_tokenizer(
         model_name_or_path=args["model_name_or_path"], 
         cache_dir=args["cache_dir"], 
