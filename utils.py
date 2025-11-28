@@ -359,7 +359,7 @@ def jload(f, mode="r"):
 ## OTHERS
 def rank0_print(message):
     if True: #torch.distributed.get_rank() == 0:
-        if torch.distributed.get_rank()==0:
+        if True: #torch.distributed.get_rank()==0:
             print(message)
         else:
             return
