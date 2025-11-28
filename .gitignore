@@ -2,3 +2,4 @@
 logs/
 res/
 wandb/
+cache/
