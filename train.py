@@ -90,5 +90,4 @@ if __name__ == '__main__':
     
     import wandb
     wandb.login(key=args.wandb_key)
-    os.environ["WANDB_PROJECT"] = "S2L_Cirriculum"
     main(config_file=args.config_file)

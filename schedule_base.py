@@ -37,7 +37,7 @@ class Schedule:
             with open(self.full_data_path, "r") as f:
                 self.train_data = json.load(f)  # fixed -> for indexing all samples
         elif 'MathInstruct' in self.full_data_path:
-            list_data_dict = load_dataset(self.full_data_path)["train"]  # fixed -> for indexing all samples
+            list_data_dict = load_dataset(self.full_data_path, split="train[:10000]")  # fixed -> for indexing all samples
             self.train_data = [list_data_dict[i] for i in range(len(list_data_dict))]
             
             self.train_idx = torch.arange(len(self.train_data))
