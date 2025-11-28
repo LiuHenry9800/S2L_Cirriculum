@@ -23,7 +23,7 @@ train_args:
   group_by_length: TRUE
   full_determinism: TRUE
   seed: 42
-init_label_num: 131020
+init_label_num: 5000
 n_round: 0
 n_query: 131020
 n_components: 100
