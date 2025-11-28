@@ -14,9 +14,9 @@ def check_match(pred_answer,actual_answer):
     acutal_extract = None
     if(actual_extracts):
         actual_extract = actual_extracts[-1]
-    print("pred_answer: ",pred_answer)
-    print("actual_answer: ",actual_answer)
-    print("extracts: ",actual_extract,pred_extract)
+    # print("pred_answer: ",pred_answer)
+    # print("actual_answer: ",actual_answer)
+    # print("extracts: ",actual_extract,pred_extract)
     return actual_extract == pred_extract
 
 def evaluate_model_accuracy(model_path,dataset_path,start_idx,end_idx):
