@@ -23,7 +23,7 @@ class S2L(Schedule):
         self.distance = args["distance"]
         self.n_components = args["n_components"]
         
-        if torch.distributed.get_rank() == 0:
+        if True: #torch.distributed.get_rank() == 0:
             losses = []
 
             for ckpt in glob.glob(f'{args["ref_model_path"]}/*'):
@@ -37,11 +37,11 @@ class S2L(Schedule):
             if (args["num_loss_ckpts"] > -1) and (len(losses) > args["num_loss_ckpts"]):
                 losses = np.stack(losses)
                 keep_every = len(losses) // args["num_loss_ckpts"]
-                print(f"*** Rank = {torch.distributed.get_rank()}, **Keeping every {keep_every} losses from {len(losses)} losses")
+                print(f"*** Rank = 0, **Keeping every {keep_every} losses from {len(losses)} losses")
                 losses = losses[np.arange(0, len(losses), keep_every)]
                 self.losses = torch.from_numpy(losses).t()
             else:
-                print(f"*** Rank = {torch.distributed.get_rank()}, **Using all {len(losses)} losses")
+                print(f"*** Rank = 0, **Using all {len(losses)} losses")
                 self.losses = torch.stack(losses).t()
                 print(self.losses.shape)
             # set nan to 0
@@ -54,7 +54,7 @@ class S2L(Schedule):
     def initialize_labeled_data(self):
         """initialize labeled data"""
         num = self.init_label_num
-        if torch.distributed.get_rank() == 0:
+        if True: #torch.distributed.get_rank() == 0:
             # rank the sources by the number of samples
             sources, counts = np.unique(self.sources, return_counts=True)
             sorted_idx = np.argsort(counts)
@@ -116,13 +116,13 @@ class S2L(Schedule):
         # get the kmeans cluster labels
         D, I = kmeans.index.search(features.numpy(), 1)
         
-        print(f"*** Rank = {torch.distributed.get_rank()}, **K-means took {time.time() - start_time} seconds")
+        print(f"*** Rank = 0, **K-means took {time.time() - start_time} seconds")
         
         # get the cluster size
         clusters, counts = np.unique(I, return_counts=True)
         sorted_idx = np.argsort(counts)
         
-        print(f"*** Rank = {torch.distributed.get_rank()}, **Sanple from clusters with size > 2")
+        print(f"*** Rank = 0, **Sanple from clusters with size > 2")
         sorted_idx = sorted_idx[counts[sorted_idx] > 2]
         
         sampled_indices = []
@@ -138,7 +138,7 @@ class S2L(Schedule):
                 n -= len(indices)
                 
         if n > 0:
-            print(f"*** Rank = {torch.distributed.get_rank()}, **K-means: {n} samples left to sample from clusters with size <= 2")
+            print(f"*** Rank = 0, **K-means: {n} samples left to sample from clusters with size <= 2")
             clusters_to_sample = clusters[np.where(counts <= 2)[0]]
             indices = np.where(np.isin(I, clusters_to_sample))[0]
             sampled_indices.append(np.random.choice(indices, n, replace=False))

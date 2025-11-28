@@ -71,13 +71,13 @@ class Schedule:
 
     def initialize_labeled_data(self):
         """Randomly init labeled pool"""
-        if torch.distributed.get_rank() == 0:
+        if True: #torch.distributed.get_rank() == 0:
             tmp_idxs = torch.randperm(self.n_pool)  # randomly permute indices (total_data_size, )
             self.labeled_idx[tmp_idxs[:self.init_label_num]] = True  # labeled=1, unlabeled=0 (total_data_size,)
 
     def save_labeled_unlabeled_data(self):
         """update & save current labaled & unlabeled pool"""
-        if torch.distributed.get_rank() == 0:
+        if True: #torch.distributed.get_rank() == 0:
             # obtain & check labeled_idx for current round
             labeled_idx = torch.arange(self.n_pool)[self.labeled_idx.bool()]  # self.labeled_idx -> kept upated
 
@@ -90,7 +90,7 @@ class Schedule:
             labeled_data_path = f"{self.data_path_root}/labeled.json"
             labeled_idx_path = f"{self.data_path_root}/labeled_idx.npy"
             unlabeled_data_path = f"{self.data_path_root}/unlabeled.json"
-            if torch.distributed.get_rank() == 0:
+            if True: #torch.distributed.get_rank() == 0:
                 retry = 0
                 while True:
                     jdump(labeled_data_json_format, labeled_data_path)
@@ -136,7 +136,7 @@ class Schedule:
         # get labeled data -> for training
         data_module = self.get_updated_train_data()
         # sanity-check
-        if torch.distributed.get_rank() == 0:
+        if True: #torch.distributed.get_rank() == 0:
             for sanity_sample in data_module["train_dataset"]:
                 break
             rank0_print(f"*** SANITY-CHECK: Training-Sample#1. - TEXT.:\n\n{self.tokenizer.decode(sanity_sample['input_ids'])}\n\n")

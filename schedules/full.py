@@ -19,7 +19,7 @@ class Full(Schedule):
 
     def initialize_labeled_data(self):
         """initialize labeled data as full data"""
-        if torch.distributed.get_rank() == 0:
+        if True: #torch.distributed.get_rank() == 0:
             self.labeled_idx[:] = True
 
     def get_updated_train_data(self):
