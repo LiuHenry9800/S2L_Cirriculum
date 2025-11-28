@@ -3,7 +3,7 @@ model_name_or_path: EleutherAI/pythia-70m-deduped  # path to pretrained foundati
 cache_dir: ./cache
 model_max_length: 512
 schedule_name: Full
-result_dir_name: full_mathinstruct_pythia-70m-deduped_3epochs_512_checkpoints 
+result_dir_name: full_mathinstruct_pythia-70m_cirriculum
 train_args:
   optim: adamw_torch
   num_train_epochs: 3
