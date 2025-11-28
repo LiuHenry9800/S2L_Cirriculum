@@ -92,4 +92,7 @@ if __name__ == '__main__':
     wandb.login(key=args.wandb_key)
     os.environ["WANDB_PROJECT"] = "CS260D-S2L_Cirriculum"
     
+    run = wandb.init(project="CS260D-S2L_Cirriculum",name="sanity-check")
+    print("wandb")
+    run.finish()
     main(config_file=args.config_file)
