@@ -43,14 +43,15 @@ def evaluate_model_accuracy(model_path,dataset_path,start_idx,end_idx):
 
     dataset = load_dataset(dataset_path,split=f"train[{start_idx}:{end_idx}]")
 
-    correct = 0
-    curr_total = 0
+
+    source_accuracies = dict()
 
     prompt_formatter = PROMPT_DICT["prompt_no_input"]
 
     for example in dataset:
         instruction = example["instruction"]
         ans = example["output"]
+        source = example["source"]
 
         prompt = prompt_formatter.format(instruction=instruction)
 
@@ -72,13 +73,29 @@ def evaluate_model_accuracy(model_path,dataset_path,start_idx,end_idx):
 
         
         pred_ans = tokenizer.decode(model_outputs[0],skip_special_tokens=True)
-
+        if source not in source_accuracies:
+            source_accuracies[source] = (0,0)
+        correct,total = source_accuracies[source]
         if(check_match(pred_ans,ans)):
             correct+=1
+            total+=1
+        else:
+            total+=1
+        source_accuracies[source] = (correct,total)
+
         curr_total+=1
         if(curr_total % 500 == 0):
+            print("Sanity check: ")
             print("idx: ",curr_total,"prompt: ",prompt)
             print("model pred answer: ",pred_ans, "actual answer: ",ans)
-            print("Summary - correct: ",correct," total: ",curr_total," percent: ",correct/curr_total)
+            print("Summary: ")
+            for source in source_accuracies:
+                correct,total = source_accuracies[source]
+                print("Source: ",source,"correct: ",correct," total: ",total," percent: ",correct/total)
 
 
+    print("Evaluation Done.")
+
+    for source in source_accuracies:
+        correct,total = source_accuracies[source]
+        print("Source: ",source,"correct: ",correct," total: ",total," percent: ",correct/total)
