@@ -48,14 +48,6 @@ def main(config_file):
     # Initialize model and tokenizer
     model = get_model(model_name_or_path=args["model_name_or_path"], cache_dir=args["cache_dir"])
     rank0_print('*** Model initialized!')
-    import torch
-    rank0_print(f'*** GPU Available: {torch.cuda.is_available()}')
-    rank0_print(f'*** GPU Count: {torch.cuda.device_count()}')
-    if torch.cuda.is_available():
-        rank0_print(f'*** GPU Name: {torch.cuda.get_device_name(0)}')
-        rank0_print(f'*** Model Device: {next(model.parameters()).device}')
-        model = model.to('cuda')
-        rank0_print(f'*** Model moved to: {next(model.parameters()).device}')
 
     tokenizer, special_tokens_dict = get_tokenizer(
         model_name_or_path=args["model_name_or_path"], 

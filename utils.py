@@ -221,7 +221,7 @@ class SupervisedDataset(Dataset):
                     # print(f"making supervised_dataset -> jload('{data_path}') FAILED: {e_str}")
                     continue
         elif 'MathInstruct' in data_path:
-            list_data_dict = load_dataset(data_path)["train"]  # fixed -> for indexing all samples
+            list_data_dict = load_dataset(data_path, split="train[:10000]")  # fixed -> for indexing all samples
             self.train_data = [list_data_dict[i] for i in range(len(list_data_dict))]
         elif 'Asclepius' in data_path:
             list_data_dict = load_dataset(data_path)["train"]  # fixed -> for indexing all samples

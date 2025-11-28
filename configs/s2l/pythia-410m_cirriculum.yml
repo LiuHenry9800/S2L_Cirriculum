@@ -1,6 +1,6 @@
 full_data_path: TIGER-Lab/MathInstruct
 model_name_or_path: EleutherAI/pythia-410m-deduped
-cache_dir: /data/huggingface_models
+cache_dir: ./cache
 model_max_length: 512
 schedule_name: S2L
 result_dir_name: s2l-pythia-410m-cirriculum
