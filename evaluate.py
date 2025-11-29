@@ -78,12 +78,16 @@ def evaluate_model_accuracy(model_path,dataset_path,start_idx,end_idx):
         if(check_match(pred_ans,ans)):
             correct+=1
         total+=1
-        if(total % 500 == 1):
+        if(total % 10 == 1):
             print()
             print("Sanity Check: ")
-            print("idx: ",total,"prompt: ",prompt)
+            print("idx: ",total)
             print()
-            print("model pred answer: ",pred_ans, "actual answer: ",ans)
+            print("prompt: ",prompt)
+            print()
+            print("model pred answer: ",pred_ans)
+            print()
+            print("actual answer: ",ans)
             print("Summary - correct: ",correct," total: ",total," percent: ",correct/total)
             print()
 
