@@ -74,6 +74,14 @@ def main(model_path, config_file=None, ckpt=-1):
     mean_entropies_all = loss(data=all_data, model=model)
     torch.save(mean_entropies_all, loss_file)
     print(f"***** Losses saved to {loss_file}")      
+    try: 
+        checkpoint_number = model_path.split("-")[-1]
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        alternative_loss_file = f"{current_dir}/losses/loss_{checkpoint_number}.pt"
+        torch.save(mean_entropies_all, alternative_loss_file)
+        print(f"***** Losses saved to {alternative_loss_file}")      
+    except:
+        print("could not save to new location")
                 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
