@@ -93,3 +93,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     main(model_path=args.model_path, config_file=args.config_file, ckpt=args.ckpt)
+
