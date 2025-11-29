@@ -50,7 +50,7 @@ def evaluate_model_accuracy(model_path,dataset_path,start_idx,end_idx):
     prompt_formatter = PROMPT_DICT["prompt_no_input"]
     correct,total = 0,0
     print("Begin Evaluation")
-    for example in tqdm(dataset):
+    for example in tqdm(dataset,total=len(dataset)):
         if(dataset_path == "EleutherAI/hendrycks_math"):
             instruction = example["problem"]
             ans = example["solution"]
