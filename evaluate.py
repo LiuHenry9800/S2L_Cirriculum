@@ -1,9 +1,10 @@
 import re
-from dataclasses import dataclass
+import tqdm
 from datasets import load_dataset
 from utils import get_model, get_tokenizer, smart_tokenizer_and_embedding_resize
 from consts import *
 import torch
+
 
 def check_match(pred_answer,actual_answer):
     pred_extracts = re.findall(r"[-+]?\d*\.?\d+",pred_answer)
@@ -49,7 +50,7 @@ def evaluate_model_accuracy(model_path,dataset_path,start_idx,end_idx):
     prompt_formatter = PROMPT_DICT["prompt_no_input"]
     correct,total = 0,0
     print("Begin Evaluation")
-    for example in dataset:
+    for example in tqdm(dataset):
         if(dataset_path == "EleutherAI/hendrycks_math"):
             instruction = example["problem"]
             ans = example["solution"]
