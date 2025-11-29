@@ -1,5 +1,5 @@
 import re
-import tqdm
+from tqdm import tqdm 
 from datasets import load_dataset
 from utils import get_model, get_tokenizer, smart_tokenizer_and_embedding_resize
 from consts import *
