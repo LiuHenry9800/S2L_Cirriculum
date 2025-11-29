@@ -67,9 +67,6 @@ def evaluate_model_accuracy(model_path,dataset_path,start_idx,end_idx):
             padding="longest",
             max_length=512, #todo: hardcoded,\
             truncation=True).to(device="cuda")
-        print("model_input",model_input)
-        
-
         with torch.no_grad():
             model_outputs = model.generate(
                 **model_input,
@@ -78,8 +75,6 @@ def evaluate_model_accuracy(model_path,dataset_path,start_idx,end_idx):
                 pad_token_id=tokenizer.pad_token_id 
 
             )
-
-        
         pred_ans = tokenizer.decode(model_outputs[0],skip_special_tokens=True)
         if(check_match(pred_ans,ans)):
             correct+=1
