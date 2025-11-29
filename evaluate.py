@@ -11,7 +11,7 @@ def check_match(pred_answer,actual_answer):
     if(pred_extracts):
         pred_extract = pred_extracts[-1]
     actual_extracts = re.findall(r"[-+]?\d*\.?\d+",actual_answer)
-    acutal_extract = None
+    actual_extract = None
     if(actual_extracts):
         actual_extract = actual_extracts[-1]
     # print("pred_answer: ",pred_answer)
@@ -41,19 +41,20 @@ def evaluate_model_accuracy(model_path,dataset_path,start_idx,end_idx):
 
     print('Evaluator: tokenizer and embedding resize done!')
 
-    dataset = load_dataset(dataset_path,split=f"train[{start_idx}:{end_idx}]")
-
-
-    source_accuracies = dict()
+    dataset = load_dataset(dataset_path,split=f"test[{start_idx}:{end_idx}]")
 
     prompt_formatter = PROMPT_DICT["prompt_no_input"]
-
-    grand_total=0
+    correct,total = 0,0
     for example in dataset:
-        instruction = example["instruction"]
-        ans = example["output"]
-        source = example["source"]
-
+        if(dataset_path == "EleutherAI/hendrycks_math"):
+            instruction = example["problem"]
+            ans = example["solution"]
+        elif(dataset_path == "openai/gsm8k"):
+            instruction = example["question"]
+            ans = example["answer"]
+        else:
+            raise TypeError("No such dataset")
+        source = model_path
         prompt = prompt_formatter.format(instruction=instruction)
 
         model_input = tokenizer(prompt,
@@ -74,29 +75,18 @@ def evaluate_model_accuracy(model_path,dataset_path,start_idx,end_idx):
 
         
         pred_ans = tokenizer.decode(model_outputs[0],skip_special_tokens=True)
-        if source not in source_accuracies:
-            source_accuracies[source] = (0,0)
-        correct,total = source_accuracies[source]
         if(check_match(pred_ans,ans)):
             correct+=1
-            total+=1
-        else:
-            total+=1
-        source_accuracies[source] = (correct,total)
+        total+=1
 
-        grand_total+=1
-        if(grand_total % 500 == 0):
+        if(total % 500 == 0):
+            print()
             print("Sanity check: ")
-            print("idx: ",grand_total,"prompt: ",prompt)
+            print("idx: ",total,"prompt: ",prompt)
+            print()
             print("model pred answer: ",pred_ans, "actual answer: ",ans)
-            print("Summary: ")
-            for source in source_accuracies:
-                correct,total = source_accuracies[source]
-                print("Source: ",source,"correct: ",correct," total: ",total," percent: ",correct/total)
-
+            print("Summary - correct: ",correct," total: ",total," percent: ",correct/total)
+            print()
 
     print("Evaluation Done.")
-
-    for source in source_accuracies:
-        correct,total = source_accuracies[source]
-        print("Source: ",source,"correct: ",correct," total: ",total," percent: ",correct/total)
+    print("Source: ",source,"correct: ",correct," total: ",total," percent: ",correct/total)

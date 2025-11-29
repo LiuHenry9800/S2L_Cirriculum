@@ -78,32 +78,6 @@ class S2L(Schedule):
                     
             self.labeled_idx[sampled_indices] = True
 
-    def query(self, n, use_model_path):
-        unlabeled_idx = torch.arange(self.n_pool)[~self.labeled_idx.bool()]  # # current unlabeled_idx
-        
-        # rank the sources by the number of samples
-        sources, counts = np.unique(self.sources[unlabeled_idx], return_counts=True)
-        sorted_idx = np.argsort(counts)
-        
-        # equally sample n samples from different sources
-        sampled_indices = []
-        for i in range(len(sorted_idx)):
-            n_per_source = n // (len(sorted_idx) - i)
-            indices = np.where(self.sources == sources[sorted_idx[i]])[0]
-            if len(indices) > n_per_source:
-                new_indices = self.faiss_kmeans_selection(self.losses[indices], n_per_source)
-                sampled_indices.append(indices[new_indices])
-                n -= n_per_source
-                print(f"Sampled {n_per_source} samples from source {sources[sorted_idx[i]]} with max loss trajectory coverage")
-            else:
-                sampled_indices.append(indices)
-                n -= len(indices)
-                print(f"Sampled {len(indices)} samples from source {sources[sorted_idx[i]]}")
-                
-        sampled_indices = np.concatenate(sampled_indices)
-        
-        return unlabeled_idx[sampled_indices]
-    
     def faiss_kmeans_selection(self, features, n):
         """
         K-means selection
