@@ -21,7 +21,7 @@ class Schedule:
         self.init_label_num = args["init_label_num"] if "init_label_num" in args else 0
         # load full-sized source data -> for indexing all samples
         if 'MathInstruct' in self.full_data_path:
-            list_data_dict = load_dataset(self.full_data_path, split="train[:10000]")  # fixed -> for indexing all samples
+            list_data_dict = load_dataset(self.full_data_path, split="train[:80000]")  # fixed -> for indexing all samples
             self.train_data = [list_data_dict[i] for i in range(len(list_data_dict))]
             
             self.train_idx = torch.arange(len(self.train_data))

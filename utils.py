@@ -107,7 +107,7 @@ class SupervisedDataset(Dataset):
         logging.warning("Loading data...")
         
         if 'MathInstruct' in data_path:
-            list_data_dict = load_dataset(data_path, split="train[:10000]")  # fixed -> for indexing all samples
+            list_data_dict = load_dataset(data_path, split="train[:80000]")  # fixed -> for indexing all samples
             self.train_data = [list_data_dict[i] for i in range(len(list_data_dict))]
         else:
             raise TypeError("no such dataset")
