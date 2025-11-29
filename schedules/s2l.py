@@ -2,7 +2,7 @@ import torch
 import sys
 import os
 sys.path.insert(0, os.path.abspath('.'))
-from schedule_base import Schedule
+from schedules.schedule_base import Schedule
 import numpy as np
 import time
 import glob

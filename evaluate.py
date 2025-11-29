@@ -40,9 +40,12 @@ def evaluate_model_accuracy(model_path,dataset_path,start_idx,end_idx):
     )
 
     print('Evaluator: tokenizer and embedding resize done!')
-
-    dataset = load_dataset(dataset_path,split=f"test[{start_idx}:{end_idx}]")
-
+    if(dataset_path == "EleutherAI/hendrycks_math"):
+        dataset = load_dataset(dataset_path,"main",split=f"test[{start_idx}:{end_idx}]")
+    elif(dataset_path == "openai/gsm8k"):
+        dataset = load_dataset(dataset_path,split=f"test[{start_idx}:{end_idx}]")
+    else:
+        raise TypeError("No such dataset")
     prompt_formatter = PROMPT_DICT["prompt_no_input"]
     correct,total = 0,0
     for example in dataset:
@@ -81,7 +84,7 @@ def evaluate_model_accuracy(model_path,dataset_path,start_idx,end_idx):
 
         if(total % 500 == 0):
             print()
-            print("Sanity check: ")
+            print("Sanity Check: ")
             print("idx: ",total,"prompt: ",prompt)
             print()
             print("model pred answer: ",pred_ans, "actual answer: ",ans)

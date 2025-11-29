@@ -20,36 +20,14 @@ class Schedule:
         self.val_data = None
         self.init_label_num = args["init_label_num"] if "init_label_num" in args else 0
         # load full-sized source data -> for indexing all samples
-        if self.full_data_path.endswith(".jsonl"):
-            with open(self.full_data_path, "r") as f:
-                self.train_data = [json.loads(line) for line in f]
-            val_data_path = self.full_data_path.replace("train", "validate")
-            with open(val_data_path, "r") as f:
-                self.val_data = [json.loads(line) for line in f]
-            self.train_idx = torch.arange(len(self.train_data))
-            if 'topic' in self.train_data[0]:
-                self.train_data = [{'instruction':data['instruction'], 'output':data['output'], 'source':data['source'], 'field':data['topic']} for data in self.train_data]
-                self.val_data = [{'instruction':data['instruction'], 'output':data['output'], 'source':data['source'], 'field':data['topic']} for data in self.val_data]
-            if 'instruction' not in self.train_data[0]:
-                self.train_data = [{'instruction':data['input'], 'output':data['output'], 'source':data['source']} for data in self.train_data]
-                self.val_data = [{'instruction':data['input'], 'output':data['output'], 'source':data['source']} for data in self.val_data]
-        elif self.full_data_path.endswith(".json"):
-            with open(self.full_data_path, "r") as f:
-                self.train_data = json.load(f)  # fixed -> for indexing all samples
-        elif 'MathInstruct' in self.full_data_path:
+        if 'MathInstruct' in self.full_data_path:
             list_data_dict = load_dataset(self.full_data_path, split="train[:10000]")  # fixed -> for indexing all samples
             self.train_data = [list_data_dict[i] for i in range(len(list_data_dict))]
             
             self.train_idx = torch.arange(len(self.train_data))
             self.val_idx = None
         else:
-            data_df = load_dataset(self.full_data_path)["train"]  # fixed -> for indexing all samples
-            # convert to json format
-            list_data_dict = []
-            for i in range(len(data_df)):
-                # parse data_df[i]['conversations'] from str to list
-                list_data_dict.append(dict(instruction=data_df[i]['conversations'][0], output=data_df[i]['conversations'][1]))
-            self.train_data = [list_data_dict[i] for i in range(len(list_data_dict))]
+            raise TypeError("No such dataset")
         
         # make a supervised data module for the valiation set
         if self.val_data is not None:

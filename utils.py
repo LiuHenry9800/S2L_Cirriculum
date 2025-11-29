@@ -106,41 +106,14 @@ class SupervisedDataset(Dataset):
         super(SupervisedDataset, self).__init__()
         logging.warning("Loading data...")
         
-        if isinstance(data_path, list): # if data_path is a list of data dicts
-            list_data_dict = data_path
-        elif data_path.endswith(".jsonl"):
-            list_data_dict = load_jsonl(data_path)
-            if 'instruction' not in list_data_dict[0]:
-                list_data_dict = [{'instruction':data['input'], 'output':data['output'], 'source':data['source']} for data in list_data_dict]
-        elif data_path.endswith(".json"):
-            while True:
-                try:
-                    list_data_dict = jload(data_path)
-                    print(f"making supervised_dataset -> jload('{data_path}') SUCESSFUL")
-                    break
-                except Exception as e:
-                    # e_str = str(e)
-                    # print(f"making supervised_dataset -> jload('{data_path}') FAILED: {e_str}")
-                    continue
-        elif 'MathInstruct' in data_path:
+        if 'MathInstruct' in data_path:
             list_data_dict = load_dataset(data_path, split="train[:10000]")  # fixed -> for indexing all samples
             self.train_data = [list_data_dict[i] for i in range(len(list_data_dict))]
-        elif 'Asclepius' in data_path:
-            list_data_dict = load_dataset(data_path)["train"]  # fixed -> for indexing all samples
-            list_data_dict = [{'instruction':data['question'], 'input':data['note'], 'output':data['answer'], 'source':data['task']} for data in list_data_dict]
         else:
-            data_df = load_dataset(data_path)["train"]
-            # convert to jsonl
-            list_data_dict = []
-            for i in range(len(data_df)):
-                # parse data_df[i]['conversations'] from str to list
-                list_data_dict.append(dict(instruction=data_df[i]['conversations'][0], output=data_df[i]['conversations'][1]))
+            raise TypeError("no such dataset")
                 
         logging.warning("Formatting inputs...")
-        if 'mimic' in data_path:
-            prompt_input, prompt_no_input = RADIOLOGY_PROMPT_DICT["prompt_no_input"], RADIOLOGY_PROMPT_DICT["prompt_no_input"]
-        else:
-            prompt_input, prompt_no_input = PROMPT_DICT["prompt_input"], PROMPT_DICT["prompt_no_input"]
+        prompt_input, prompt_no_input = PROMPT_DICT["prompt_input"], PROMPT_DICT["prompt_no_input"]
         sources = [
             prompt_input.format_map(example) if example.get("input", "") != "" else prompt_no_input.format_map(example)
             for example in list_data_dict
@@ -240,12 +213,3 @@ def rank0_print(message):
             return
     else:
         print(message)
-            
-
-def load_jsonl(file):
-    lines = []
-    with open(file, "r") as f:
-        for line in f.readlines():
-            lines.append(json.loads(line))
-    return lines
-

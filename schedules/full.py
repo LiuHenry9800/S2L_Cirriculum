@@ -2,7 +2,7 @@ import torch
 import sys
 import os
 sys.path.insert(0, os.path.abspath('.'))
-from schedule_base import Schedule
+from schedules.schedule_base import Schedule
 from utils import make_supervised_data_module
 
 class Full(Schedule):
