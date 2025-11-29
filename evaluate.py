@@ -1,5 +1,5 @@
 import re
-from tqdm import tqdm 
+from tqdm import tqdm
 from datasets import load_dataset
 from utils import get_model, get_tokenizer, smart_tokenizer_and_embedding_resize
 from consts import *
@@ -50,7 +50,7 @@ def evaluate_model_accuracy(model_path,dataset_path,start_idx,end_idx):
     prompt_formatter = PROMPT_DICT["prompt_no_input"]
     correct,total = 0,0
     print("Begin Evaluation")
-    for example in tqdm(dataset,total=len(dataset)):
+    for example in dataset:
         if(dataset_path == "EleutherAI/hendrycks_math"):
             instruction = example["problem"]
             ans = example["solution"]
@@ -70,17 +70,15 @@ def evaluate_model_accuracy(model_path,dataset_path,start_idx,end_idx):
         with torch.no_grad():
             model_outputs = model.generate(
                 **model_input,
-                max_new_tokens=256,
+                max_new_tokens=512,
                 do_sample=False,
-                pad_token_id=tokenizer.pad_token_id 
-
+                pad_token_id=tokenizer.pad_token_id
             )
         pred_ans = tokenizer.decode(model_outputs[0],skip_special_tokens=True)
         if(check_match(pred_ans,ans)):
             correct+=1
         total+=1
-
-        if(total % 500 == 0):
+        if(total % 500 == 1):
             print()
             print("Sanity Check: ")
             print("idx: ",total,"prompt: ",prompt)
