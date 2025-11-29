@@ -41,9 +41,9 @@ def evaluate_model_accuracy(model_path,dataset_path,start_idx,end_idx):
 
     print('Evaluator: tokenizer and embedding resize done!')
     if(dataset_path == "EleutherAI/hendrycks_math"):
-        dataset = load_dataset(dataset_path,"main",split=f"test[{start_idx}:{end_idx}]")
-    elif(dataset_path == "openai/gsm8k"):
         dataset = load_dataset(dataset_path,split=f"test[{start_idx}:{end_idx}]")
+    elif(dataset_path == "openai/gsm8k"):
+        dataset = load_dataset(dataset_path,"main",split=f"test[{start_idx}:{end_idx}]")
     else:
         raise TypeError("No such dataset")
     prompt_formatter = PROMPT_DICT["prompt_no_input"]
