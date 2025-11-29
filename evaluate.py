@@ -48,6 +48,7 @@ def evaluate_model_accuracy(model_path,dataset_path,start_idx,end_idx):
         raise TypeError("No such dataset")
     prompt_formatter = PROMPT_DICT["prompt_no_input"]
     correct,total = 0,0
+    print("Begin Evaluation")
     for example in dataset:
         if(dataset_path == "EleutherAI/hendrycks_math"):
             instruction = example["problem"]
@@ -65,6 +66,7 @@ def evaluate_model_accuracy(model_path,dataset_path,start_idx,end_idx):
             padding="longest",
             max_length=512, #todo: hardcoded,\
             truncation=True).to(device="cuda")
+        print("model_input",model_input)
         
 
         with torch.no_grad():
