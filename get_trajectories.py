@@ -80,9 +80,9 @@ def main(model_path, config_file=None, ckpt=-1):
         alternative_loss_file = f"{current_dir}/losses/loss_{checkpoint_number}.pt"
         torch.save(mean_entropies_all, alternative_loss_file)
         print(f"***** Losses saved to {alternative_loss_file}")      
-    except:
-        print("could not save to new location")
-                
+    except Exception as e:
+        print("could not save to new location: ",e)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_file', type=str, required=False, default=None,

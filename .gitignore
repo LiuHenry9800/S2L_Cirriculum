@@ -3,4 +3,5 @@ logs/
 res/
 wandb/
 cache/
-Project.ipynb
+*.log
+losses/*

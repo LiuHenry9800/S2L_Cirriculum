@@ -3,7 +3,7 @@ model_name_or_path: EleutherAI/pythia-410m-deduped
 cache_dir: ./cache
 model_max_length: 512
 schedule_name: S2L
-result_dir_name: s2l-pythia-410m_cirriculum_s2l
+result_dir_name: pythia-410m_s2l
 train_args:
   optim: adamw_torch
   num_train_epochs: 3
@@ -24,7 +24,5 @@ train_args:
   full_determinism: TRUE
   seed: 42
 init_label_num: 5000
-n_round: 0
-n_query: 131020
 n_components: 100
-ref_model_path: res/pythia-70m_cirriculum_full/output
+ref_model_path: res/pythia-70m_full/output
