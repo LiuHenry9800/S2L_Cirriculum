@@ -31,13 +31,12 @@ training_args = TrainingArguments(
     output_dir="./pythia-70m-math",
     per_device_train_batch_size=8,
     gradient_accumulation_steps=4,
-    warmup_steps=100,
     num_train_epochs=3,
     learning_rate=5e-5,
     fp16=True,
-    logging_steps=10,
-    save_steps=500,
-    save_total_limit=3
+    logging_steps=1,
+    save_steps=1875,
+    save_total_limit=4
 )
 
 trainer = SFTTrainer(
