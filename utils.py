@@ -109,6 +109,8 @@ class SupervisedDataset(Dataset):
         if 'MathInstruct' in data_path:
             list_data_dict = load_dataset(data_path, split="train[:80000]")  # fixed -> for indexing all samples
             self.train_data = [list_data_dict[i] for i in range(len(list_data_dict))]
+        elif data_path.endswith(".json"):
+            list_data_dict = jload(data_path)
         else:
             raise TypeError("no such dataset")
                 

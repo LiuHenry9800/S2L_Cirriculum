@@ -20,7 +20,10 @@ class Schedule:
         self.val_data = None
         self.init_label_num = args["init_label_num"] if "init_label_num" in args else 0
         # load full-sized source data -> for indexing all samples
-        if 'MathInstruct' in self.full_data_path:
+        if self.full_data_path.endswith(".json"):
+            with open(self.full_data_path, "r") as f:
+                self.train_data = json.load(f)  # fixed -> for indexing all samples
+        elif 'MathInstruct' in self.full_data_path:
             list_data_dict = load_dataset(self.full_data_path, split="train[:80000]")  # fixed -> for indexing all samples
             self.train_data = [list_data_dict[i] for i in range(len(list_data_dict))]
             
