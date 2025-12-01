@@ -33,7 +33,7 @@ def train_model(config: TrainConfig):
     tokenizer = AutoTokenizer.from_pretrained(config.model_path)
     tokenizer.pad_token = tokenizer.eos_token
 
-
+    print("Model and Tokenizer Initialized")
     if os.path.exists(config.dataset_name):
         dataset = load_dataset("json", data_files=config.dataset_name)["train"]
     else:
@@ -41,6 +41,7 @@ def train_model(config: TrainConfig):
         dataset = load_dataset(config.dataset_name, split=split)
 
     dataset = dataset.map(format_example)
+    print("Dataset Initialized")
 
     sft_config = SFTConfig(
         output_dir=config.output_dir,
@@ -71,7 +72,9 @@ def train_model(config: TrainConfig):
         args=sft_config,
     )
 
+    print("Trainer Started")
     trainer.train()
+    print("Trainer Ended")
 
 
 if __name__ == "__main__":

@@ -39,6 +39,7 @@ def compute_losses(checkpoint_dir, dataset_name, n_samples=80000):
         tokenizer = AutoTokenizer.from_pretrained(ckpt_path)
         tokenizer.pad_token = tokenizer.eos_token
         
+        print("Loaded model and tokenizer, Begin To Run Examples")
         losses = []
         with torch.no_grad():
             for example in tqdm(dataset):
