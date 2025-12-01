@@ -1,0 +1,4 @@
+model_path: "EleutherAI/pythia-410m-deduped"
+n_samples: 80000
+dataset_name: "TIGER-Lab/MathInstruct"
+output_dir: "./results/pythia-410M-s2l"

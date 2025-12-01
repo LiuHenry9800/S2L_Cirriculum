@@ -1,0 +1,82 @@
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from trl import SFTTrainer, SFTConfig
+from datasets import load_dataset
+import yaml
+import argparse
+import os
+
+
+class TrainConfig:
+    def __init__(self,config_file):
+        self.model_path = "EleutherAI/pythia-70m-deduped"
+        self.dataset_name = "TIGER-Lab/MathInstruct"
+        self.n_samples = -1
+        self.output_dir = "./pythia-70m-math"
+        self.num_train_epochs = 3
+        self.save_steps = 1875
+        self.save_total_limit = 4
+        self.logging_steps = 1
+        if config_file:
+            with open(config_file) as f:
+                config_dict = yaml.safe_load(f)
+                for key, value in config_dict.items():
+                    setattr(self, key, value)
+
+def format_example(example):
+    return {
+        "prompt": f"Below is an instruction that describes a task.\nWrite a response that appropriately completes the request.\n\n### Instruction:\n{example['instruction']}\n\n### Response:\n",
+        "output": example['output']
+    }
+
+def train_model(config: TrainConfig):
+    model = AutoModelForCausalLM.from_pretrained(config.model_path)
+    tokenizer = AutoTokenizer.from_pretrained(config.model_path)
+    tokenizer.pad_token = tokenizer.eos_token
+
+
+    if os.path.exists(config.dataset_name):
+        dataset = load_dataset("json", data_files=config.dataset_name)["train"]
+    else:
+        split = f"train[:{config.n_samples}]" if config.n_samples > -1 else "train"
+        dataset = load_dataset(config.dataset_name, split=split)
+
+    dataset = dataset.map(format_example)
+
+    sft_config = SFTConfig(
+        output_dir=config.output_dir,
+        optim="adamw_torch",
+        per_device_train_batch_size=4,
+        gradient_accumulation_steps=8,
+        num_train_epochs=config.num_train_epochs,
+        learning_rate=2.0e-5,
+        weight_decay=0.0,
+        warmup_ratio=0.03,
+        lr_scheduler_type="cosine",
+        logging_steps=1,
+        save_steps=config.save_steps,
+        save_total_limit=config.save_total_limit,
+        max_seq_length=512,
+        bf16=True,
+        tf32=True,
+        seed=42,
+        completion_only_loss=True,
+        group_by_length=False,
+        full_determinism=True
+    )
+    
+    trainer = SFTTrainer(
+        model=model,
+        processing_class=tokenizer,
+        train_dataset=dataset,
+        args=sft_config,
+    )
+
+    trainer.train()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', type=str, default=None)
+    args = parser.parse_args()
+    train_model(TrainConfig(args.config))
+    print("Training completed.")
