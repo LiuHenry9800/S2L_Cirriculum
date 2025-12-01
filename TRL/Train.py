@@ -4,6 +4,7 @@ from datasets import load_dataset
 import yaml
 import argparse
 import os
+import wandb
 
 
 class TrainConfig:
@@ -46,6 +47,7 @@ def train_model(config: TrainConfig):
     sft_config = SFTConfig(
         output_dir=config.output_dir,
         optim="adamw_torch",
+        report_to="wandb",
         per_device_train_batch_size=4,
         gradient_accumulation_steps=8,
         num_train_epochs=config.num_train_epochs,
@@ -81,5 +83,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, default=None)
     args = parser.parse_args()
+    wandb.login(key="0944191bcf43ea6231189f995e76d66cc523c13d")
+    wandb.init(project="S2L_Cirriculum")
     train_model(TrainConfig(args.config))
     print("Training completed.")
