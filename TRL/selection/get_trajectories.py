@@ -14,7 +14,7 @@ def format_example(example):
     }
 
 
-def compute_losses(checkpoint_dir, dataset_name, n_samples=80000):
+def compute_losses(checkpoint_dir, dataset_name, n_samples=120000):
     losses_dir = os.path.join(checkpoint_dir, "losses")
     os.makedirs(losses_dir,exist_ok=True)
     
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--checkpoint_dir', required=True, help='Directory containing checkpoints')
     parser.add_argument('--dataset_name', default='TIGER-Lab/MathInstruct')
-    parser.add_argument('--n_samples', type=int, default=80000)
+    parser.add_argument('--n_samples', type=int, default=120000)
     args = parser.parse_args()
     
     compute_losses(args.checkpoint_dir, args.dataset_name, args.n_samples)

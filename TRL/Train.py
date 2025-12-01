@@ -39,6 +39,7 @@ def train_model(config: TrainConfig):
         dataset = load_dataset("json", data_files=config.dataset_name)["train"]
     else:
         split = f"train[:{config.n_samples}]" if config.n_samples > -1 else "train"
+        print("Split: ",split)
         dataset = load_dataset(config.dataset_name, split=split)
 
     dataset = dataset.map(format_example)

@@ -12,7 +12,7 @@ class SelectionConfig:
     def __init__(self, config_file):
         self.losses_dir = None
         self.dataset_name = "TIGER-Lab/MathInstruct"
-        self.dataset_cutoff = 80000
+        self.dataset_cutoff = 120000
         self.n_samples = 5000
         self.num_epochs = 1
         self.algorithm = "s2l_select"
