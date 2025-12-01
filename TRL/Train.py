@@ -56,7 +56,7 @@ def train_model(config: TrainConfig):
         logging_steps=1,
         save_steps=config.save_steps,
         save_total_limit=config.save_total_limit,
-        max_seq_length=512,
+        max_length=512,
         bf16=True,
         tf32=True,
         seed=42,
