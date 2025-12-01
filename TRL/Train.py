@@ -25,7 +25,7 @@ class TrainConfig:
 def format_example(example):
     return {
         "prompt": f"Below is an instruction that describes a task.\nWrite a response that appropriately completes the request.\n\n### Instruction:\n{example['instruction']}\n\n### Response:\n",
-        "output": example['output']
+        "completion": example['output']
     }
 
 def train_model(config: TrainConfig):

@@ -10,7 +10,7 @@ LLAMA_IGNORE_INDEX = -100
 def format_example(example):
     return {
         "prompt": f"Below is an instruction that describes a task.\nWrite a response that appropriately completes the request.\n\n### Instruction:\n{example['instruction']}\n\n### Response:\n",
-        "output": example['output']
+        "completion": example['output']
     }
 
 
@@ -44,7 +44,7 @@ def compute_losses(checkpoint_dir, dataset_name, n_samples=80000):
         with torch.no_grad():
             for example in tqdm(dataset):
                 prompt = example["prompt"]
-                full = example['prompt'] + example['output']
+                full = example['prompt'] + example['completion']
 
                 tok_prompt = tokenizer(prompt,return_tensors="pt")
                 tok_full = tokenizer(full, return_tensors="pt",truncation=True,max_length=512)
