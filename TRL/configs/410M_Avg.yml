@@ -1,0 +1,3 @@
+model_path: "EleutherAI/pythia-410m-deduped"
+dataset_name: "./results/data/70M-avg.json"
+output_dir: "./results/pythia-410M-avg"

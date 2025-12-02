@@ -61,6 +61,13 @@ def select_training_data(config:SelectionConfig):
                                                 n_clusters=100, 
                                                 num_epochs=config.num_epochs, 
                                                 algorithm=avg_loss_algo)
+    elif config.algorithm == "overall_loss_decrease_select":
+            selected_indices = select_with_algorithm(losses,
+                                                sources,
+                                                config.n_samples, 
+                                                n_clusters=100, 
+                                                num_epochs=config.num_epochs, 
+                                                algorithm=overall_loss_decrease_algo)
     else:
         raise ValueError(f"Unknown selection algorithm: {config.algorithm}")
     
@@ -157,6 +164,15 @@ def avg_loss_algo(losses, n_samples, n_clusters, num_epochs):
         losses, n_samples, n_clusters, num_epochs,
         ranking_fn=avg_loss
     )
+#(last - first loss) take the mean of all samples in that cluster
+def overall_loss_decrease_algo(losses, n_samples, n_clusters, num_epochs):
+    def overall_decrease(loss_amts):
+        return (loss_amts[:, -1] - loss_amts[:, 0]).mean()
+    return curriculum_select_helper(
+        losses, n_samples, n_clusters, num_epochs,
+        ranking_fn=overall_decrease
+    )
+
 
 # base s2l
 def s2l_algo(losses, n_samples, n_clusters,num_epochs):

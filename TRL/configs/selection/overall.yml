@@ -3,5 +3,5 @@ dataset_name: "TIGER-Lab/MathInstruct"
 dataset_cutoff: 120000
 n_samples: 60000
 num_epochs: 4
-algorithm: "avg_loss_select"
-output_file: "./results/data/70M-avg.json"
+algorithm: "overall_loss_decrease_select"
+output_file: "./results/data/70M-overall.json"
