@@ -80,6 +80,9 @@ def train_model(config: TrainConfig):
     print("Trainer Started")
     trainer.train()
     print("Trainer Ended")
+    final_model_path = os.path.join(config.output_dir, "final_model")
+    trainer.save_model(final_model_path)
+    print(f"Final model saved to: {final_model_path}")
 
 
 if __name__ == "__main__":
