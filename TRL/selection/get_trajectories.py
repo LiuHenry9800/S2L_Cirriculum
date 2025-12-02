@@ -18,11 +18,13 @@ def compute_losses(checkpoint_dir, dataset_name, n_samples=120000):
     losses_dir = os.path.join(checkpoint_dir, "losses")
     os.makedirs(losses_dir,exist_ok=True)
     
-    checkpoints = sorted([d for d in os.listdir(checkpoint_dir) if d.startswith('checkpoint-')])
-    
+    checkpoints = sorted([int(d.split("checkpoint-")[1]) for d in os.listdir(checkpoint_dir) if d.startswith('checkpoint-')])
+    checkpoints = ["checkpoint-"+str(num) for num in checkpoints]
+
     split = f"train[:{n_samples}]" if n_samples > -1 else "train"
     dataset = load_dataset(dataset_name, split=split)
     dataset = dataset.map(format_example)
+    print(f"checkpoints files: {checkpoints} ")
     
     for ckpt_name in checkpoints:
         ckpt_num = ckpt_name.split('-')[-1]
