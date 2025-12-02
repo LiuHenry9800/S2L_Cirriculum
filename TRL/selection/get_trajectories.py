@@ -28,7 +28,7 @@ def compute_losses(checkpoint_dir, dataset_name, n_samples=120000):
     
     for ckpt_name in checkpoints:
         ckpt_num = ckpt_name.split('-')[-1]
-        loss_file = os.path.join(losses_dir, f"ckpt{ckpt_num}_loss.pt")
+        loss_file = os.path.join(losses_dir, f"checkpoint{ckpt_num}_loss.pt")
         
         if os.path.exists(loss_file):
             print(f"{ckpt_name} losses already exist, skipping")

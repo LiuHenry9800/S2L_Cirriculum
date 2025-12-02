@@ -31,7 +31,10 @@ def select_training_data(config:SelectionConfig):
     sources = np.array([data['source'] for data in dataset])
     
     losses = []
-    for loss_file in sorted(glob.glob(os.path.join(config.losses_dir, "ckpt*_loss.pt"))):
+    loss_files = glob.glob(os.path.join(config.losses_dir, "ckpt*_loss.pt"))
+    print(loss_files)
+    loss_files = sorted(loss_files, key=lambda x: int(x.split('ckpt')[1].split('_')[0]))
+    for loss_file in loss_files:
         print(f"found loss file: {loss_file}")
         losses.append(torch.load(loss_file))
     
