@@ -37,6 +37,8 @@ def train_model(config: TrainConfig):
     print("Model and Tokenizer Initialized")
     if os.path.exists(config.dataset_name):
         dataset = load_dataset("json", data_files=config.dataset_name)["train"]
+        print(f"len dataset {len(dataset)}")
+        print(f"first entry {dataset[0]}")
     else:
         split = f"train[:{config.n_samples}]" if config.n_samples > -1 else "train"
         print("Split: ",split)

@@ -3,4 +3,4 @@ dataset_name: "TIGER-Lab/MathInstruct"
 dataset_cutoff: 120000
 n_samples: 60000
 algorithm: "s2l_select"
-output_file: "./results/data/70m-s2l.json"
+output_file: "./results/data/70M-S2L.json"
