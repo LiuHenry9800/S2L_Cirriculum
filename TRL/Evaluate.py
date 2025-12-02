@@ -87,3 +87,11 @@ def evaluate_model_accuracy(model_path, dataset_path, start_idx, end_idx):
     print("Evaluation Done.")
     print(f"Model: {model_path}")
     print(f"Results: {correct}/{total} = {correct/total}")
+
+
+if __name__ == "__main__":
+    print("Testing Pythia 410M Trained On Full Dataset On GSM8K")
+    evaluate_model_accuracy(model_path="results/pythia-410M-full/checkpoint-11250",
+                            dataset_path="openai/gsm8k",
+                            start_idx=0,
+                            end_idx=100)
