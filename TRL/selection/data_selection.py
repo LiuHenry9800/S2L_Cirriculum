@@ -14,7 +14,7 @@ class SelectionConfig:
         self.dataset_name = "TIGER-Lab/MathInstruct"
         self.dataset_cutoff = 120000
         self.n_samples = 5000
-        self.num_epochs = 1
+        self.num_epochs = 3
         self.algorithm = "s2l_select"
         self.output_file = "selected_data.json"
         

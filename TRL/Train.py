@@ -14,7 +14,7 @@ class TrainConfig:
         self.n_samples = -1
         self.output_dir = "./pythia-70m-math"
         self.num_train_epochs = 3
-        self.save_steps = 1875
+        self.save_steps = 3750
         self.save_total_limit = 4
         self.logging_steps = 1
         if config_file:
