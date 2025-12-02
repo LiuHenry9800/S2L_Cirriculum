@@ -2,6 +2,6 @@ losses_dir: "./results/pythia-70m-full/losses"
 dataset_name: "TIGER-Lab/MathInstruct"
 dataset_cutoff: 120000
 n_samples: 5000
-num_epochs: 3
+num_epochs: 4
 algorithm: "avg_loss_select"
 output_file: "./results/data/70m-avg.json"

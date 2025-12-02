@@ -14,7 +14,7 @@ class SelectionConfig:
         self.dataset_name = "TIGER-Lab/MathInstruct"
         self.dataset_cutoff = 120000
         self.n_samples = 5000
-        self.num_epochs = 3
+        self.num_epochs = 4
         self.algorithm = "s2l_select"
         self.output_file = "selected_data.json"
         
@@ -24,7 +24,7 @@ class SelectionConfig:
                 for key, value in config_dict.items():
                     setattr(self, key, value)
 
-def select_training_data(config):
+def select_training_data(config:SelectionConfig):
     split = f"train[:{config.dataset_cutoff}]" if config.dataset_cutoff > -1 else "train"
     dataset = load_dataset(config.dataset_name, split=split)
 
@@ -41,9 +41,19 @@ def select_training_data(config):
     
     #decide the algo
     if config.algorithm == 's2l_select':
-        selected_indices = s2l_select(losses, sources, config.n_samples)
+        selected_indices = select_with_algorithm(losses,
+                                                sources,
+                                                config.n_samples, 
+                                                n_clusters=100, 
+                                                num_epochs=None, 
+                                                algorithm=s2l_cluster_select)
     elif config.algorithm == 'avg_loss_select':
-        selected_indices = avg_loss_select(losses, sources, config.n_samples, config.num_epochs)
+        selected_indices = select_with_algorithm(losses,
+                                                sources,
+                                                config.n_samples, 
+                                                n_clusters=100, 
+                                                num_epochs=config.num_epochs, 
+                                                algorithm=avg_cluster_select)
     else:
         raise ValueError(f"Unknown selection algorithm: {config.algorithm}")
     
@@ -56,14 +66,12 @@ def select_training_data(config):
     print(f"Total selected: {len(selected_data)} samples, saved to {config.output_file}")
     return selected_indices
 
-
-def s2l_select(losses, sources, n_samples):
+def select_with_algorithm(losses, sources, n_samples, n_clusters, num_epochs, algorithm):
     unique_sources, source_counts = np.unique(sources, return_counts=True)
     sorted_source_idx = np.argsort(source_counts)
     
     selected_indices = []
     remaining = n_samples
-    n_clusters = 100
     
     for i in range(len(sorted_source_idx)):
         source = unique_sources[sorted_source_idx[i]]
@@ -72,23 +80,68 @@ def s2l_select(losses, sources, n_samples):
         
         if len(source_indices) > n_per_source:
             source_losses = losses[source_indices]
-            selected = kmeans_cluster_select(source_losses, n_per_source, n_clusters)
+            selected = algorithm(source_losses, n_per_source, n_clusters, num_epochs)
             selected_indices.extend(source_indices[selected].tolist())
             remaining -= n_per_source
-            print(f"Selected {n_per_source} from source '{source}' using k-means")
         else:
             selected_indices.extend(source_indices.tolist())
             remaining -= len(source_indices)
-            print(f"Selected all {len(source_indices)} from source '{source}'")
     
     return selected_indices
 
+def avg_cluster_select(losses, n_samples, n_clusters, num_epochs):
+    kmeans = faiss.Kmeans(losses.shape[1], n_clusters, niter=20, verbose=False)
+    kmeans.train(losses.numpy())
+    _, cluster_labels = kmeans.index.search(losses.numpy(), 1)
+    
+    avg_losses = losses.mean(dim=1).numpy()
+    clusters, counts = np.unique(cluster_labels, return_counts=True)
+    
+    cluster_avg_losses = []
+    for cluster_id in clusters:
+        cluster_indices = np.where(cluster_labels == cluster_id)[0]
+        cluster_avg_loss = avg_losses[cluster_indices].mean()
+        cluster_avg_losses.append((cluster_id, cluster_avg_loss))
+    
+    cluster_avg_losses.sort(key=lambda x: x[1])
+    sorted_clusters = np.array([c[0] for c in cluster_avg_losses])
+    
+    samples_per_epoch = n_samples // num_epochs
+    selected = []
+    
+    for epoch in range(num_epochs):
+        #btw, make sure num clusters(usually 100) divisble by num_epcohs
+        pool_size = int(len(sorted_clusters) * (epoch + 1) / num_epochs)
+        available_clusters = sorted_clusters[:pool_size]
+        
+        large_clusters = available_clusters[np.isin(available_clusters, clusters[counts > 2])]
+        
+        remaining = samples_per_epoch
+        
+        for i in range(len(large_clusters)):
+            cluster_id = large_clusters[i]
+            cluster_indices = np.where(cluster_labels == cluster_id)[0]
+            n_per_cluster = remaining // (len(large_clusters) - i)
+            
+            if len(cluster_indices) > n_per_cluster:
+                idcs = np.random.choice(cluster_indices, n_per_cluster, replace=False)
+            else:
+                idcs = cluster_indices
+            
+            selected.extend(idcs)
+            remaining -= len(idcs)
+        
+        if remaining > 0:
+            small_clusters = available_clusters[np.isin(available_clusters, clusters[counts <= 2])]
+            small_indices = np.where(np.isin(cluster_labels, small_clusters))[0]
+            if len(small_indices) > 0:
+                sel = np.random.choice(small_indices, min(remaining, len(small_indices)), replace=False)
+                selected.extend(sel)
+    
+    return np.array(selected[:n_samples])
 
-def avg_loss_select(losses, sources, n_samples, num_epochs):
-    raise NotImplementedError("avg_loss_select not implemented yet")
 
-
-def kmeans_cluster_select(losses, n_samples, n_clusters):
+def s2l_cluster_select(losses, n_samples, n_clusters,num_epochs):
     kmeans = faiss.Kmeans(losses.shape[1], n_clusters, niter=20, verbose=False)
     kmeans.train(losses.numpy())
     
