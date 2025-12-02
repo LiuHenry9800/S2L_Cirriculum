@@ -39,7 +39,7 @@ def select_training_data(config:SelectionConfig):
     loss_files = sorted(loss_files, key=lambda x: int(x.split('ckpt')[1].split('_')[0]))
     for loss_file in loss_files:
         print(f"found loss file: {loss_file}")
-        losses.append(torch.load(loss_file))
+        losses.append(torch.stack(torch.load(loss_file)))
     
     losses = torch.stack(losses).t()
     losses[torch.isnan(losses)] = 0
