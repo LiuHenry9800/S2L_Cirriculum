@@ -30,6 +30,9 @@ def select_training_data(config:SelectionConfig):
 
     sources = np.array([data['source'] for data in dataset])
     
+    if os.path.exists(config.losses_dir):
+        print(f"All files in directory: {os.listdir(config.losses_dir)}")
+
     losses = []
     loss_files = glob.glob(os.path.join(config.losses_dir, "ckpt*_loss.pt"))
     print(loss_files)
