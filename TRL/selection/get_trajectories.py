@@ -71,8 +71,8 @@ def compute_losses(checkpoint_dir, dataset_name, n_samples=120000, run_name=None
                 torch.save(losses, os.path.join(root_project_dir, run_name, loss_file))
                 print(f"saved to {os.path.join(root_project_dir, run_name, loss_file)}")
             else:
-                torch.save(losses, os.path.join(root_project_dir, "losses", loss_file))
-                print(f"saved to {os.path.join(root_project_dir, "losses", loss_file)}")
+                torch.save(losses, os.path.join(root_project_dir, 'losses', loss_file))
+                print(f"saved to {os.path.join(root_project_dir, 'losses', loss_file)}")
         except Exception as e:
             print(f"{e=}")
 
