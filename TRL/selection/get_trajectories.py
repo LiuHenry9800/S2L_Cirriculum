@@ -14,7 +14,7 @@ def format_example(example):
     }
 
 
-def compute_losses(checkpoint_dir, dataset_name, n_samples=120000):
+def compute_losses(checkpoint_dir, dataset_name, n_samples=120000, run_name=None):
     losses_dir = os.path.join(checkpoint_dir, "losses")
     os.makedirs(losses_dir,exist_ok=True)
     
@@ -62,6 +62,20 @@ def compute_losses(checkpoint_dir, dataset_name, n_samples=120000):
                 losses.append(loss.cpu())
         
         torch.save(losses, loss_file)
+        # get the losses folder:
+        try:
+            script_directory = os.path.dirname(os.path.realpath(__file__))
+            two_levels_up_raw = os.path.join(script_directory, '..', '..')
+            root_project_dir = os.path.normpath(two_levels_up_raw)
+            if run_name is not None:
+                torch.save(losses, os.path.join(root_project_dir, run_name, loss_file))
+                print(f"saved to {os.path.join(root_project_dir, run_name, loss_file)}")
+            else:
+                torch.save(losses, os.path.join(root_project_dir, "losses", loss_file))
+                print(f"saved to {os.path.join(root_project_dir, "losses", loss_file)}")
+        except Exception as e:
+            print(f"{e=}")
+
         print(f"Saved to {loss_file}")
 
 if __name__ == '__main__':

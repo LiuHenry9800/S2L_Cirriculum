@@ -48,25 +48,44 @@ def select_training_data(config:SelectionConfig):
     
     #decide the algo
     if config.algorithm == 's2l_select':
+        # Original S2L - no curriculum
         selected_indices = select_with_algorithm(losses,
                                                 sources,
-                                                config.n_samples, 
-                                                n_clusters=100, 
-                                                num_epochs=None, 
+                                                config.n_samples,
+                                                n_clusters=100,
+                                                num_epochs=None,
                                                 algorithm=s2l_algo)
-    elif config.algorithm == 'avg_loss_select':
+    elif config.algorithm == 'avg_loss_curriculum':
+        # S2L + curriculum with average loss heuristic
         selected_indices = select_with_algorithm(losses,
                                                 sources,
-                                                config.n_samples, 
-                                                n_clusters=100, 
-                                                num_epochs=config.num_epochs, 
+                                                config.n_samples,
+                                                n_clusters=100,
+                                                num_epochs=config.num_epochs,
+                                                algorithm=avg_loss_curriculum)
+    elif config.algorithm == 'loss_decrease_curriculum':
+        # S2L + curriculum with loss decrease heuristic
+        selected_indices = select_with_algorithm(losses,
+                                                sources,
+                                                config.n_samples,
+                                                n_clusters=100,
+                                                num_epochs=config.num_epochs,
+                                                algorithm=loss_decrease_curriculum)
+    elif config.algorithm == 'avg_loss_select':
+        # Old curriculum helper (kept for backwards compatibility)
+        selected_indices = select_with_algorithm(losses,
+                                                sources,
+                                                config.n_samples,
+                                                n_clusters=100,
+                                                num_epochs=config.num_epochs,
                                                 algorithm=avg_loss_algo)
     elif config.algorithm == "overall_loss_decrease_select":
-            selected_indices = select_with_algorithm(losses,
+        # Old curriculum helper (kept for backwards compatibility)
+        selected_indices = select_with_algorithm(losses,
                                                 sources,
-                                                config.n_samples, 
-                                                n_clusters=100, 
-                                                num_epochs=config.num_epochs, 
+                                                config.n_samples,
+                                                n_clusters=100,
+                                                num_epochs=config.num_epochs,
                                                 algorithm=overall_loss_decrease_algo)
     else:
         raise ValueError(f"Unknown selection algorithm: {config.algorithm}")
@@ -172,6 +191,114 @@ def overall_loss_decrease_algo(losses, n_samples, n_clusters, num_epochs):
         losses, n_samples, n_clusters, num_epochs,
         ranking_fn=overall_decrease
     )
+
+
+# S2L curriculum learning with difficulty heuristics
+def s2l_curriculum_algo(losses, n_samples, n_clusters, num_epochs, ranking_fn):
+    """
+    S2L clustering + curriculum learning within each cluster
+
+    Process:
+    1. Do S2L clustering (cluster by loss trajectories)
+    2. Sample evenly from ALL clusters
+    3. Within each cluster, rank samples by difficulty using ranking_fn
+    4. Pick n_samples easy, then n_samples medium, then n_samples hard
+    5. Concatenate: [easy, medium, hard]
+
+    Args:
+        losses: Loss trajectories for samples
+        n_samples: Samples to select PER difficulty level (total = n_samples * num_epochs)
+        n_clusters: Number of clusters for K-means
+        num_epochs: Number of difficulty levels (e.g., 3 for easy/medium/hard)
+        ranking_fn: Function to rank sample difficulty (takes single sample losses, returns score)
+
+    Returns:
+        Array of selected indices, ordered by difficulty (easy first, hard last)
+    """
+    # Step 1: S2L clustering (always the same)
+    print(f"Performing S2L clustering with {n_clusters} clusters...")
+    kmeans = faiss.Kmeans(losses.shape[1], n_clusters, niter=20, verbose=False)
+    kmeans.train(losses.numpy())
+    _, cluster_labels = kmeans.index.search(losses.numpy(), 1)
+
+    clusters, counts = np.unique(cluster_labels, return_counts=True)
+    print(f"Created {len(clusters)} clusters")
+
+    # Filter for larger clusters (S2L strategy)
+    large_clusters = clusters[counts > 2]
+    small_clusters = clusters[counts <= 2]
+
+    all_selected = []
+
+    # Step 2: For each difficulty level (easy, medium, hard)
+    # Sample evenly from ALL clusters, but pick easy/medium/hard samples within each cluster
+    for epoch in range(num_epochs):
+        difficulty_name = ["Easy", "Medium", "Hard"][epoch] if num_epochs == 3 else f"Level {epoch + 1}"
+        print(f"\nSelecting {n_samples} {difficulty_name} samples...")
+
+        epoch_selected = []
+        remaining = n_samples
+
+        # Sample evenly from large clusters
+        samples_per_cluster = remaining // len(large_clusters) if len(large_clusters) > 0 else 0
+
+        for cluster_id in large_clusters:
+            cluster_indices = np.where(cluster_labels == cluster_id)[0]
+            cluster_losses = losses[cluster_indices]
+
+            # Rank samples within this cluster by difficulty
+            sample_scores = []
+            for i, idx in enumerate(cluster_indices):
+                score = ranking_fn(cluster_losses[i])
+                sample_scores.append((idx, score))
+
+            # Sort by difficulty (ascending = easy to hard)
+            sample_scores.sort(key=lambda x: x[1])
+            sorted_indices = np.array([s[0] for s in sample_scores])
+
+            # Determine which samples to pick from this cluster for this difficulty level
+            total_cluster_samples = len(sorted_indices)
+            start_idx = int(total_cluster_samples * epoch / num_epochs)
+            end_idx = int(total_cluster_samples * (epoch + 1) / num_epochs)
+            difficulty_samples = sorted_indices[start_idx:end_idx]
+
+            # Pick samples_per_cluster from this difficulty level
+            n_to_pick = min(samples_per_cluster, len(difficulty_samples))
+            if n_to_pick > 0:
+                selected = np.random.choice(difficulty_samples, n_to_pick, replace=False)
+                epoch_selected.extend(selected)
+                remaining -= n_to_pick
+
+        # Fill remaining from small clusters (randomly)
+        if remaining > 0 and len(small_clusters) > 0:
+            small_indices = np.where(np.isin(cluster_labels, small_clusters))[0]
+            if len(small_indices) > 0:
+                n_to_pick = min(remaining, len(small_indices))
+                sel = np.random.choice(small_indices, n_to_pick, replace=False)
+                epoch_selected.extend(sel)
+
+        all_selected.extend(epoch_selected)
+        print(f"  Selected {len(epoch_selected)} samples ({difficulty_name})")
+
+    print(f"\nTotal selected: {len(all_selected)} samples")
+    return np.array(all_selected)
+
+
+# Curriculum with average loss heuristic
+def avg_loss_curriculum(losses, n_samples, n_clusters, num_epochs):
+    def avg_loss(sample_losses):
+        # Single sample: shape [num_checkpoints]
+        return sample_losses.mean()
+    return s2l_curriculum_algo(losses, n_samples, n_clusters, num_epochs, ranking_fn=avg_loss)
+
+
+# Curriculum with loss decrease heuristic
+def loss_decrease_curriculum(losses, n_samples, n_clusters, num_epochs):
+    def loss_decrease(sample_losses):
+        # Single sample: shape [num_checkpoints]
+        # Negated so smaller = easier (less improvement = already easy)
+        return -(sample_losses[-1] - sample_losses[0])
+    return s2l_curriculum_algo(losses, n_samples, n_clusters, num_epochs, ranking_fn=loss_decrease)
 
 
 # base s2l
