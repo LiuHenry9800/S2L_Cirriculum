@@ -84,7 +84,15 @@ def select_training_data(config:SelectionConfig):
     with open(config.output_file, 'w') as f:
         json.dump(selected_data, f, indent=2)
     
-    print(f"Total selected: {len(selected_data)} samples, saved to {config.output_file}")
+    if config.algorithm == 's2l_select':
+        expected = config.n_samples
+    else:
+        expected = config.n_samples * config.num_epochs
+    
+    print(f"Algorithm: {config.algorithm}")
+    print(f"Expected samples: {expected}")
+    print(f"Actual samples: {len(selected_data)}")
+    print(f"Saved to: {config.output_file}")
     return selected_indices
 
 #main loop chooses an algorithm and selects all the data
