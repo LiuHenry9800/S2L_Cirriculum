@@ -6,6 +6,7 @@ import os
 import json
 import yaml
 import argparse
+import math
 from datasets import load_dataset
 
 class SelectionConfig:
@@ -14,7 +15,7 @@ class SelectionConfig:
         self.dataset_name = "TIGER-Lab/MathInstruct"
         self.dataset_cutoff = 120000
         self.n_samples = 5000
-        self.num_epochs = 4
+        self.num_epochs = 1
         self.algorithm = "s2l_select"
         self.output_file = "selected_data.json"
         
@@ -52,26 +53,26 @@ def select_training_data(config:SelectionConfig):
                                                 sources,
                                                 config.n_samples, 
                                                 n_clusters=100, 
-                                                num_epochs=None, 
+                                                num_epochs=1, 
                                                 algorithm=s2l_algo)
     elif config.algorithm == 'avg_loss_select':
         selected_indices = select_with_algorithm(losses,
                                                 sources,
-                                                config.n_samples * config.num_epochs, 
+                                                config.n_samples, 
                                                 n_clusters=100, 
                                                 num_epochs=config.num_epochs, 
                                                 algorithm=avg_loss_algo)
     elif config.algorithm == "overall_loss_decrease_select":
         selected_indices = select_with_algorithm(losses,
                                                 sources,
-                                                config.n_samples * config.num_epochs, 
+                                                config.n_samples, 
                                                 n_clusters=100, 
                                                 num_epochs=config.num_epochs, 
                                                 algorithm=overall_loss_decrease_algo)
     elif config.algorithm == "instability_select":
         selected_indices = select_with_algorithm(losses,
                                             sources,
-                                            config.n_samples * config.num_epochs, 
+                                            config.n_samples, 
                                             n_clusters=100, 
                                             num_epochs=config.num_epochs, 
                                             algorithm=instability_algo)
@@ -95,11 +96,10 @@ def select_training_data(config:SelectionConfig):
     print(f"Saved to: {config.output_file}")
     return selected_indices
 
-#main loop chooses an algorithm and selects all the data
+#main loop, for every epoch, select the subset
 def select_with_algorithm(losses, sources, n_samples, n_clusters, num_epochs, algorithm):
-    print(f"\n{'='*60}")
-    print(f"SELECT_WITH_ALGORITHM: Requested total samples: {n_samples}")
-    print(f"{'='*60}")
+    print(f"Start select_with_algorithm requested samples per epoch: {n_samples}")
+    print(f"Number of epochs: {num_epochs}")
     
     unique_sources, source_counts = np.unique(sources, return_counts=True)
     sorted_source_idx = np.argsort(source_counts)
@@ -107,42 +107,48 @@ def select_with_algorithm(losses, sources, n_samples, n_clusters, num_epochs, al
     print(f"Number of sources: {len(unique_sources)}")
     print(f"Total samples across all sources: {len(sources)}")
     
-    selected_indices = []
-    remaining = n_samples
+    all_selected_indices = []
     
-    for i in range(len(sorted_source_idx)):
-        source = unique_sources[sorted_source_idx[i]]
-        source_indices = np.where(sources == source)[0]
-        n_per_source = remaining // (len(sorted_source_idx) - i)
+    # Loop through epochs
+    for epoch in range(num_epochs if num_epochs else 1):
+        print(f"epoch {epoch}/{num_epochs if num_epochs else 1}")
         
-        print(f"\nSource {i+1}/{len(sorted_source_idx)}: '{source}'")
-        print(f"  Available in source: {len(source_indices)}")
-        print(f"  Requesting: {n_per_source}")
-        print(f"  Remaining to allocate: {remaining}")
+        selected_indices = []
+        remaining = n_samples
         
-        if len(source_indices) > n_per_source:
-            source_losses = losses[source_indices]
-            selected = algorithm(source_losses, n_per_source, n_clusters, num_epochs)
-            print(f"  Actually selected: {len(selected)}")
-            selected_indices.extend(source_indices[selected].tolist())
-            remaining -= len(selected)
-        else:
-            print(f"  Taking all {len(source_indices)} samples (source too small)")
-            selected_indices.extend(source_indices.tolist())
-            remaining -= len(source_indices)
+        # Loop through sources for this epoch
+        for i in range(len(sorted_source_idx)):
+            source = unique_sources[sorted_source_idx[i]]
+            source_indices = np.where(sources == source)[0]
+            n_per_source = remaining // (len(sorted_source_idx) - i)
+            
+            print(f"Source {i+1}/{len(sorted_source_idx)}: '{source}'")
+            print(f"Available in source: {len(source_indices)}")
+            print(f"Requesting: {n_per_source}")
+            print(f"Remaining: {remaining}")
+            
+            if len(source_indices) > n_per_source:
+                source_losses = losses[source_indices]
+                selected = algorithm(source_losses, n_per_source, n_clusters, epoch, num_epochs)
+                print(f"Actually selected: {len(selected)}")
+                selected_indices.extend(source_indices[selected].tolist())
+                remaining -= len(selected)
+            else:
+                print(f"Taking all {len(source_indices)} samples, source too small")
+                selected_indices.extend(source_indices.tolist())
+                remaining -= len(source_indices)
+        
+        print(f"Epoch {epoch} total: {len(selected_indices)} samples")
+        all_selected_indices.extend(selected_indices)
     
-    print(f"\n{'='*60}")
-    print(f"FINAL: Total selected indices: {len(selected_indices)}")
-    print(f"{'='*60}\n")
-    return selected_indices
+    print(f"Total selected indices across all epochs: {len(all_selected_indices)}")
+    return all_selected_indices
 
 # use for any cirriculum selection
-def curriculum_select_helper(losses, n_samples, n_clusters, num_epochs, ranking_fn):
-    """Generic curriculum selection with pluggable ranking function"""
+def curriculum_select_helper(losses, n_samples, n_clusters, current_epoch, num_epochs, ranking_fn):
     print(f"\nCurriculum Helper: Total samples in pool: {len(losses)}")
-    print(f"Requested total samples: {n_samples}")
-    print(f"Samples per epoch: {n_samples // num_epochs}")
-    print(f"Num epochs: {num_epochs}")
+    print(f"Requested samples: {n_samples}")
+    print(f"Current epoch: {current_epoch}/{num_epochs}")
     
     kmeans = faiss.Kmeans(losses.shape[1], n_clusters, niter=20, verbose=False)
     kmeans.train(losses.numpy())
@@ -159,77 +165,69 @@ def curriculum_select_helper(losses, n_samples, n_clusters, num_epochs, ranking_
     cluster_scores.sort(key=lambda x: x[1])
     sorted_clusters = np.array([c[0] for c in cluster_scores])
     
-    samples_per_epoch = n_samples // num_epochs
+    # Use current_epoch to determine difficulty pool (round up, cap at total)
+    pool_size = min(math.ceil(len(sorted_clusters) * (current_epoch + 1) / num_epochs), len(sorted_clusters))
+    available_clusters = sorted_clusters[:pool_size]
+    large_clusters = available_clusters[np.isin(available_clusters, clusters[counts > 2])]
+    
+    # Count total samples in available clusters
+    total_in_pool = sum(counts[np.where(clusters == c)[0][0]] for c in available_clusters)
+    print(f"Available clusters: {len(available_clusters)}, Total samples in pool: {total_in_pool}")
+    
     selected = []
+    remaining = n_samples
     
-    for epoch in range(num_epochs):
-        pool_size = int(len(sorted_clusters) * (epoch + 1) / num_epochs)
-        available_clusters = sorted_clusters[:pool_size]
-        large_clusters = available_clusters[np.isin(available_clusters, clusters[counts > 2])]
+    for i in range(len(large_clusters)):
+        cluster_id = large_clusters[i]
+        cluster_indices = np.where(cluster_labels == cluster_id)[0]
+        n_per_cluster = remaining // (len(large_clusters) - i)
         
-        # Count total samples in available clusters
-        total_in_pool = sum(counts[np.where(clusters == c)[0][0]] for c in available_clusters)
-        print(f"\nEpoch {epoch}: Available clusters: {len(available_clusters)}, Total samples in pool: {total_in_pool}")
+        if len(cluster_indices) > n_per_cluster:
+            idcs = np.random.choice(cluster_indices, n_per_cluster, replace=False)
+        else:
+            idcs = cluster_indices
         
-        remaining = samples_per_epoch
-        epoch_selected = 0
-        
-        for i in range(len(large_clusters)):
-            cluster_id = large_clusters[i]
-            cluster_indices = np.where(cluster_labels == cluster_id)[0]
-            n_per_cluster = remaining // (len(large_clusters) - i)
-            
-            if len(cluster_indices) > n_per_cluster:
-                idcs = np.random.choice(cluster_indices, n_per_cluster, replace=False)
-            else:
-                idcs = cluster_indices
-            
-            selected.extend(idcs)
-            epoch_selected += len(idcs)
-            remaining -= len(idcs)
-        
-        if remaining > 0:
-            small_clusters = available_clusters[np.isin(available_clusters, clusters[counts <= 2])]
-            small_indices = np.where(np.isin(cluster_labels, small_clusters))[0]
-            if len(small_indices) > 0:
-                sel = np.random.choice(small_indices, min(remaining, len(small_indices)), replace=False)
-                selected.extend(sel)
-                epoch_selected += len(sel)
-        
-        print(f"Epoch {epoch}: Selected {epoch_selected} samples (requested {samples_per_epoch})")
+        selected.extend(idcs)
+        remaining -= len(idcs)
     
-    print(f"\nTotal selected across all epochs: {len(selected)}")
+    if remaining > 0:
+        small_clusters = available_clusters[np.isin(available_clusters, clusters[counts <= 2])]
+        small_indices = np.where(np.isin(cluster_labels, small_clusters))[0]
+        if len(small_indices) > 0:
+            sel = np.random.choice(small_indices, min(remaining, len(small_indices)), replace=False)
+            selected.extend(sel)
+    
+    print(f"Selected {len(selected)} samples (requested {n_samples})")
     return np.array(selected[:n_samples])
 
 # avg loss selection
-def avg_loss_algo(losses, n_samples, n_clusters, num_epochs):
+def avg_loss_algo(losses, n_samples, n_clusters, current_epoch, num_epochs):
     def avg_loss(loss_amts):
         return loss_amts.mean()
-    print("using avg loss")
     return curriculum_select_helper(
-        losses, n_samples, n_clusters, num_epochs,
+        losses, n_samples, n_clusters, current_epoch, num_epochs,
         ranking_fn=avg_loss
     )
-#(last - first loss) take the mean of all samples in that cluster
-def overall_loss_decrease_algo(losses, n_samples, n_clusters, num_epochs):
+
+# (last - first loss) take the mean of all samples in that cluster
+def overall_loss_decrease_algo(losses, n_samples, n_clusters, current_epoch, num_epochs):
     def overall_decrease(loss_amts):
         return (loss_amts[:, -1] - loss_amts[:, 0]).mean()
     return curriculum_select_helper(
-        losses, n_samples, n_clusters, num_epochs,
+        losses, n_samples, n_clusters, current_epoch, num_epochs,
         ranking_fn=overall_decrease
     )
 
-def instability_algo(losses, n_samples, n_clusters, num_epochs):
+def instability_algo(losses, n_samples, n_clusters, current_epoch, num_epochs):
     def instability(loss_amts):
         return np.abs(loss_amts[:, 1:] - loss_amts[:, :-1]).sum(axis=1).mean()
     return curriculum_select_helper(
-        losses, n_samples, n_clusters, num_epochs,
+        losses, n_samples, n_clusters, current_epoch, num_epochs,
         ranking_fn=instability
     )
 
-
 # base s2l
-def s2l_algo(losses, n_samples, n_clusters,num_epochs):
+def s2l_algo(losses, n_samples, n_clusters, current_epoch, num_epochs):
     kmeans = faiss.Kmeans(losses.shape[1], n_clusters, niter=20, verbose=False)
     kmeans.train(losses.numpy())
     
