@@ -3,3 +3,4 @@ n_samples: 120000
 dataset_name: "./results/data/70M-S2L.json"
 output_dir: "./results/pythia-410M-s2l"
 num_train_epochs: 3
+save_steps: 999999
