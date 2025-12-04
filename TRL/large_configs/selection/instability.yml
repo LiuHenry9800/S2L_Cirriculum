@@ -1,0 +1,7 @@
+losses_dir: "./large_results/pythia-70M-full/losses"
+dataset_name: "TIGER-Lab/MathInstruct"
+dataset_cutoff: 240000
+n_samples: 80000
+num_epochs: 3
+algorithm: "instability_select"
+output_file: "./large_results/data/70M-instability.json"

@@ -1,0 +1,5 @@
+model_path: "EleutherAI/pythia-410m-deduped"
+dataset_name: "./large_results/data/70M-avg.json"
+output_dir: "./large_results/pythia-410M-avg"
+num_train_epochs: 1
+save_steps: 999999

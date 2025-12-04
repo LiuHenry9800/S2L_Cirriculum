@@ -1,0 +1,6 @@
+model_path: "EleutherAI/pythia-70m-deduped"
+n_samples: 240000
+output_dir: "./large_results/pythia-70M-full"
+num_train_epochs: 3
+save_steps: 7500
+save_total_limit: 4

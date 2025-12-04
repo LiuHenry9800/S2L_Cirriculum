@@ -36,9 +36,9 @@ def select_training_data(config:SelectionConfig):
         print(f"All files in directory: {os.listdir(config.losses_dir)}")
 
     losses = []
-    loss_files = glob.glob(os.path.join(config.losses_dir, "ckpt*_loss.pt"))
+    loss_files = glob.glob(os.path.join(config.losses_dir, "checkpoint*_loss.pt"))
     print(loss_files)
-    loss_files = sorted(loss_files, key=lambda x: int(x.split('ckpt')[1].split('_')[0]))
+    loss_files = sorted(loss_files, key=lambda x: int(x.split('checkpoint')[1].split('_')[0]))
     for loss_file in loss_files:
         print(f"found loss file: {loss_file}")
         losses.append(torch.stack(torch.load(loss_file)))
@@ -188,7 +188,7 @@ def curriculum_select_helper(losses, n_samples, n_clusters, current_epoch, num_e
         cluster_indices = np.where(cluster_labels == cluster_id)[0]
         n_per_cluster = remaining // (len(large_clusters) - i)
         
-        # print(f"Cluster {i+1}/{len(large_clusters)}: size={len(cluster_indices)}, requesting={n_per_cluster}")
+        print(f"Cluster {i+1}/{len(large_clusters)}: size={len(cluster_indices)}, requesting={n_per_cluster}")
         
         if len(cluster_indices) > n_per_cluster:
             idcs = np.random.choice(cluster_indices, n_per_cluster, replace=False)
@@ -256,7 +256,7 @@ def s2l_algo(losses, n_samples, n_clusters, current_epoch, num_epochs):
         cluster_indices = np.where(cluster_labels == cluster_id)[0]
         n_per_cluster = remaining // (len(sorted_idx) - i)
         
-        # print(f"Cluster {i+1}/{len(sorted_idx)}: size={len(cluster_indices)}, requesting={n_per_cluster}")
+        print(f"Cluster {i+1}/{len(sorted_idx)}: size={len(cluster_indices)}, requesting={n_per_cluster}")
         
         if len(cluster_indices) > n_per_cluster:
             idcs = np.random.choice(cluster_indices, n_per_cluster, replace=False)
