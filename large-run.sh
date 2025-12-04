@@ -2,11 +2,11 @@
 
 # Train 70M proxy model on 210K samples
 echo "Training 70M model"
-CUDA_VISIBLE_DEVICES=0 python TRL/Train.py --config TRL/large_configs/70M_Full.yml
+CUDA_VISIBLE_DEVICES=0 python TRL/Train.py --config TRL/large_configs/70M_Full.yml > 70m_pipeline.log 2>&1
 
 # Collect trajectories
 echo "getting trajectories"
-python TRL/selection/get_trajectories.py --checkpoint_dir ./large_results/pythia-70M-full --dataset_name TIGER-Lab/MathInstruct --n_samples 240000
+python TRL/selection/get_trajectories.py --checkpoint_dir ./large_results/pythia-70M-full --dataset_name TIGER-Lab/MathInstruct --n_samples 240000 > traj_pipeline.log 2>&1
 
 # Run pipelines
 echo "Starting S2L"
