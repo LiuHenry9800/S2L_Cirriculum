@@ -188,6 +188,7 @@ def curriculum_select_helper(losses, n_samples, n_clusters, num_epochs, ranking_
 def avg_loss_algo(losses, n_samples, n_clusters, num_epochs):
     def avg_loss(loss_amts):
         return loss_amts.mean()
+    print("using avg loss")
     return curriculum_select_helper(
         losses, n_samples, n_clusters, num_epochs,
         ranking_fn=avg_loss
