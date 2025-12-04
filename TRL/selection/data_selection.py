@@ -57,17 +57,24 @@ def select_training_data(config:SelectionConfig):
     elif config.algorithm == 'avg_loss_select':
         selected_indices = select_with_algorithm(losses,
                                                 sources,
-                                                config.n_samples, 
+                                                config.n_samples * config.num_epochs, 
                                                 n_clusters=100, 
                                                 num_epochs=config.num_epochs, 
                                                 algorithm=avg_loss_algo)
     elif config.algorithm == "overall_loss_decrease_select":
-            selected_indices = select_with_algorithm(losses,
+        selected_indices = select_with_algorithm(losses,
                                                 sources,
-                                                config.n_samples, 
+                                                config.n_samples * config.num_epochs, 
                                                 n_clusters=100, 
                                                 num_epochs=config.num_epochs, 
                                                 algorithm=overall_loss_decrease_algo)
+    elif config.algorithm == "instability_select":
+        selected_indices = select_with_algorithm(losses,
+                                            sources,
+                                            config.n_samples * config.num_epochs, 
+                                            n_clusters=100, 
+                                            num_epochs=config.num_epochs, 
+                                            algorithm=instability_algo)
     else:
         raise ValueError(f"Unknown selection algorithm: {config.algorithm}")
     
@@ -171,6 +178,14 @@ def overall_loss_decrease_algo(losses, n_samples, n_clusters, num_epochs):
     return curriculum_select_helper(
         losses, n_samples, n_clusters, num_epochs,
         ranking_fn=overall_decrease
+    )
+
+def instability_algo(losses, n_samples, n_clusters, num_epochs):
+    def instability(loss_amts):
+        return np.abs(loss_amts[:, 1:] - loss_amts[:, :-1]).sum(axis=1).mean()
+    return curriculum_select_helper(
+        losses, n_samples, n_clusters, num_epochs,
+        ranking_fn=instability
     )
 
 
