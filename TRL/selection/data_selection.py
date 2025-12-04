@@ -97,8 +97,15 @@ def select_training_data(config:SelectionConfig):
 
 #main loop chooses an algorithm and selects all the data
 def select_with_algorithm(losses, sources, n_samples, n_clusters, num_epochs, algorithm):
+    print(f"\n{'='*60}")
+    print(f"SELECT_WITH_ALGORITHM: Requested total samples: {n_samples}")
+    print(f"{'='*60}")
+    
     unique_sources, source_counts = np.unique(sources, return_counts=True)
     sorted_source_idx = np.argsort(source_counts)
+    
+    print(f"Number of sources: {len(unique_sources)}")
+    print(f"Total samples across all sources: {len(sources)}")
     
     selected_indices = []
     remaining = n_samples
@@ -108,15 +115,25 @@ def select_with_algorithm(losses, sources, n_samples, n_clusters, num_epochs, al
         source_indices = np.where(sources == source)[0]
         n_per_source = remaining // (len(sorted_source_idx) - i)
         
+        print(f"\nSource {i+1}/{len(sorted_source_idx)}: '{source}'")
+        print(f"  Available in source: {len(source_indices)}")
+        print(f"  Requesting: {n_per_source}")
+        print(f"  Remaining to allocate: {remaining}")
+        
         if len(source_indices) > n_per_source:
             source_losses = losses[source_indices]
             selected = algorithm(source_losses, n_per_source, n_clusters, num_epochs)
+            print(f"  Actually selected: {len(selected)}")
             selected_indices.extend(source_indices[selected].tolist())
-            remaining -= n_per_source
+            remaining -= len(selected)
         else:
+            print(f"  Taking all {len(source_indices)} samples (source too small)")
             selected_indices.extend(source_indices.tolist())
             remaining -= len(source_indices)
     
+    print(f"\n{'='*60}")
+    print(f"FINAL: Total selected indices: {len(selected_indices)}")
+    print(f"{'='*60}\n")
     return selected_indices
 
 # use for any cirriculum selection
