@@ -122,6 +122,11 @@ def select_with_algorithm(losses, sources, n_samples, n_clusters, num_epochs, al
 # use for any cirriculum selection
 def curriculum_select_helper(losses, n_samples, n_clusters, num_epochs, ranking_fn):
     """Generic curriculum selection with pluggable ranking function"""
+    print(f"\nCurriculum Helper: Total samples in pool: {len(losses)}")
+    print(f"Requested total samples: {n_samples}")
+    print(f"Samples per epoch: {n_samples // num_epochs}")
+    print(f"Num epochs: {num_epochs}")
+    
     kmeans = faiss.Kmeans(losses.shape[1], n_clusters, niter=20, verbose=False)
     kmeans.train(losses.numpy())
     _, cluster_labels = kmeans.index.search(losses.numpy(), 1)
@@ -141,13 +146,16 @@ def curriculum_select_helper(losses, n_samples, n_clusters, num_epochs, ranking_
     selected = []
     
     for epoch in range(num_epochs):
-
-        #btw, make sure cluster count divisible by num epochs
         pool_size = int(len(sorted_clusters) * (epoch + 1) / num_epochs)
         available_clusters = sorted_clusters[:pool_size]
         large_clusters = available_clusters[np.isin(available_clusters, clusters[counts > 2])]
         
+        # Count total samples in available clusters
+        total_in_pool = sum(counts[np.where(clusters == c)[0][0]] for c in available_clusters)
+        print(f"\nEpoch {epoch}: Available clusters: {len(available_clusters)}, Total samples in pool: {total_in_pool}")
+        
         remaining = samples_per_epoch
+        epoch_selected = 0
         
         for i in range(len(large_clusters)):
             cluster_id = large_clusters[i]
@@ -160,6 +168,7 @@ def curriculum_select_helper(losses, n_samples, n_clusters, num_epochs, ranking_
                 idcs = cluster_indices
             
             selected.extend(idcs)
+            epoch_selected += len(idcs)
             remaining -= len(idcs)
         
         if remaining > 0:
@@ -168,7 +177,11 @@ def curriculum_select_helper(losses, n_samples, n_clusters, num_epochs, ranking_
             if len(small_indices) > 0:
                 sel = np.random.choice(small_indices, min(remaining, len(small_indices)), replace=False)
                 selected.extend(sel)
+                epoch_selected += len(sel)
+        
+        print(f"Epoch {epoch}: Selected {epoch_selected} samples (requested {samples_per_epoch})")
     
+    print(f"\nTotal selected across all epochs: {len(selected)}")
     return np.array(selected[:n_samples])
 
 # avg loss selection
