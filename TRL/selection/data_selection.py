@@ -188,7 +188,7 @@ def curriculum_select_helper(losses, n_samples, n_clusters, current_epoch, num_e
         cluster_indices = np.where(cluster_labels == cluster_id)[0]
         n_per_cluster = remaining // (len(large_clusters) - i)
         
-        print(f"Cluster {i+1}/{len(large_clusters)}: size={len(cluster_indices)}, requesting={n_per_cluster}")
+        # print(f"Cluster {i+1}/{len(large_clusters)}: size={len(cluster_indices)}, requesting={n_per_cluster}")
         
         if len(cluster_indices) > n_per_cluster:
             idcs = np.random.choice(cluster_indices, n_per_cluster, replace=False)
@@ -256,7 +256,7 @@ def s2l_algo(losses, n_samples, n_clusters, current_epoch, num_epochs):
         cluster_indices = np.where(cluster_labels == cluster_id)[0]
         n_per_cluster = remaining // (len(sorted_idx) - i)
         
-        print(f"Cluster {i+1}/{len(sorted_idx)}: size={len(cluster_indices)}, requesting={n_per_cluster}")
+        # print(f"Cluster {i+1}/{len(sorted_idx)}: size={len(cluster_indices)}, requesting={n_per_cluster}")
         
         if len(cluster_indices) > n_per_cluster:
             idcs = np.random.choice(cluster_indices, n_per_cluster, replace=False)
