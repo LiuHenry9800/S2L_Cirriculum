@@ -165,22 +165,30 @@ def curriculum_select_helper(losses, n_samples, n_clusters, current_epoch, num_e
     cluster_scores.sort(key=lambda x: x[1])
     sorted_clusters = np.array([c[0] for c in cluster_scores])
     
-    # Use current_epoch to determine difficulty pool (round up, cap at total)
+    # there is a pool of available clusters, 34 for first epoch, 67 for second, all 100 at end
     pool_size = min(math.ceil(len(sorted_clusters) * (current_epoch + 1) / num_epochs), len(sorted_clusters))
     available_clusters = sorted_clusters[:pool_size]
-    large_clusters = available_clusters[np.isin(available_clusters, clusters[counts > 2])]
     
-    # Count total samples in available clusters
     total_in_pool = sum(counts[np.where(clusters == c)[0][0]] for c in available_clusters)
     print(f"Available clusters: {len(available_clusters)}, Total samples in pool: {total_in_pool}")
+    
+    # sort by size
+    cluster_sizes = [(c, counts[np.where(clusters == c)[0][0]]) for c in available_clusters]
+    cluster_sizes.sort(key=lambda x: x[1])
+    size_sorted_clusters = np.array([c[0] for c in cluster_sizes])
+    
+    large_clusters = size_sorted_clusters[np.isin(size_sorted_clusters, clusters[counts > 2])]
     
     selected = []
     remaining = n_samples
     
+    # smallest clusters to largest to maintain some fairness
     for i in range(len(large_clusters)):
         cluster_id = large_clusters[i]
         cluster_indices = np.where(cluster_labels == cluster_id)[0]
         n_per_cluster = remaining // (len(large_clusters) - i)
+        
+        print(f"Cluster {i+1}/{len(large_clusters)}: size={len(cluster_indices)}, requesting={n_per_cluster}")
         
         if len(cluster_indices) > n_per_cluster:
             idcs = np.random.choice(cluster_indices, n_per_cluster, replace=False)
@@ -191,7 +199,7 @@ def curriculum_select_helper(losses, n_samples, n_clusters, current_epoch, num_e
         remaining -= len(idcs)
     
     if remaining > 0:
-        small_clusters = available_clusters[np.isin(available_clusters, clusters[counts <= 2])]
+        small_clusters = size_sorted_clusters[np.isin(size_sorted_clusters, clusters[counts <= 2])]
         small_indices = np.where(np.isin(cluster_labels, small_clusters))[0]
         if len(small_indices) > 0:
             sel = np.random.choice(small_indices, min(remaining, len(small_indices)), replace=False)
@@ -247,6 +255,8 @@ def s2l_algo(losses, n_samples, n_clusters, current_epoch, num_epochs):
         cluster_id = clusters[sorted_idx[i]]
         cluster_indices = np.where(cluster_labels == cluster_id)[0]
         n_per_cluster = remaining // (len(sorted_idx) - i)
+        
+        print(f"Cluster {i+1}/{len(sorted_idx)}: size={len(cluster_indices)}, requesting={n_per_cluster}")
         
         if len(cluster_indices) > n_per_cluster:
             idcs = np.random.choice(cluster_indices, n_per_cluster, replace=False)

@@ -1,3 +1,4 @@
 model_path: "EleutherAI/pythia-410m-deduped"
 dataset_name: "./results/data/70M-instability.json"
 output_dir: "./results/pythia-410M-instability"
+num_train_epochs: 1
