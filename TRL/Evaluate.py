@@ -90,8 +90,29 @@ def evaluate_model_accuracy(model_path, dataset_path, start_idx, end_idx):
 
 
 if __name__ == "__main__":
-    print("Testing Pythia 410M Trained On Full Dataset On GSM8K")
+    print("Testing Pythia 410M Full Trained On Full Dataset On GSM8K")
     evaluate_model_accuracy(model_path="results/pythia-410M-full/checkpoint-11250",
                             dataset_path="openai/gsm8k",
                             start_idx=0,
-                            end_idx=100)
+                            end_idx=1000)
+    print("Testing Pythia 410M s2l Trained On Full Dataset On GSM8K")
+    evaluate_model_accuracy(model_path="results/pythia-410M-s2l/final_model",
+                            dataset_path="openai/gsm8k",
+                            start_idx=0,
+                            end_idx=1000)
+    print("Testing Pythia 410M avg Trained On Full Dataset On GSM8K")
+    evaluate_model_accuracy(model_path="results/pythia-410M-avg/final_model",
+                            dataset_path="openai/gsm8k",
+                            start_idx=0,
+                            end_idx=1000)
+    print("Testing Pythia 410M overall Trained On Full Dataset On GSM8K")
+    evaluate_model_accuracy(model_path="results/pythia-410M-overall/final_model",
+                            dataset_path="openai/gsm8k",
+                            start_idx=0,
+                            end_idx=1000)
+    
+    # evaluate_model_accuracy(model_path="results/pythia-410M-instability/final_model",
+    #                         dataset_path="openai/gsm8k",
+    #                         start_idx=0,
+    #                         end_idx=1000)
+                            
