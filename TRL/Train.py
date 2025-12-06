@@ -1,4 +1,4 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
 from trl import SFTTrainer, SFTConfig
 from datasets import load_dataset
 import yaml
@@ -67,9 +67,10 @@ def train_model(config: TrainConfig):
         seed=42,
         completion_only_loss=True,
         group_by_length=False,
-        full_determinism=True
+        full_determinism=True,
+        shuffle_dataset=False
     )
-    
+
     trainer = SFTTrainer(
         model=model,
         processing_class=tokenizer,
