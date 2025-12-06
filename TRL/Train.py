@@ -95,6 +95,14 @@ def train_curriculum(config: TrainConfig, tokenizer):
     for epoch in range(config.num_train_epochs):
         print(f"Curriculum Epoch {epoch + 1}/{config.num_train_epochs}")
         
+        run_name = f"{config.output_dir.split('/')[-1]}_epoch{epoch+1}"
+        wandb.init(
+            project="S2L_Cirriculum",
+            name=run_name,
+            reinit=True
+        )
+        print(f"WandB run: {run_name}")
+        
         start_idx = epoch * samples_per_epoch
         end_idx = (epoch + 1) * samples_per_epoch if epoch < config.num_train_epochs - 1 else len(dataset)
         epoch_dataset = dataset.select(range(start_idx, end_idx))
@@ -139,6 +147,8 @@ def train_curriculum(config: TrainConfig, tokenizer):
         checkpoint_path = os.path.join(config.output_dir, f"epoch_{epoch + 1}")
         trainer.save_model(checkpoint_path)
         print(f"Saved checkpoint: {checkpoint_path}")
+        
+        wandb.finish()
         
         current_model_path = checkpoint_path
     
