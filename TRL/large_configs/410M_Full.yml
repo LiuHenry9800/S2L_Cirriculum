@@ -1,0 +1,6 @@
+model_path: "EleutherAI/pythia-410m-deduped"
+dataset_name: "TIGER-Lab/MathInstruct"
+n_samples: 240000
+output_dir: "./large_results/pythia-410M-full"
+num_train_epochs: 3
+save_steps: 999999
