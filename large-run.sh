@@ -6,9 +6,12 @@ CUDA_VISIBLE_DEVICES=0 python TRL/Train.py --config TRL/large_configs/70M_Full.y
 
 # Collect trajectories
 echo "getting trajectories"
-python TRL/selection/get_trajectories.py --checkpoint_dir ./large_results/pythia-70M-full --dataset_name TIGER-Lab/MathInstruct --n_samples 240000 > traj_pipeline.log 2>&1
+CUDA_VISIBLE_DEVICES=0 python TRL/selection/get_trajectories.py --checkpoint_dir ./large_results/pythia-70M-full --dataset_name TIGER-Lab/MathInstruct --n_samples 240000 > traj_pipeline.log 2>&1
 
 # Run pipelines
+echo "Starting Full"
+CUDA_VISIBLE_DEVICES=1 python TRL/Train.py --config TRL/large_configs/410M_Full.yml > large_full.log 2>&1 &
+
 echo "Starting S2L"
 CUDA_VISIBLE_DEVICES=0 python TRL/Run.py --selection_config TRL/large_configs/selection/s2l.yml --train_config TRL/large_configs/410M_S2L.yml > large_s2l.log 2>&1 &
 
