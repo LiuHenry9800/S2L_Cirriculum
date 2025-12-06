@@ -1,5 +1,9 @@
 #!/bin/bash
 
+
+UDA_VISIBLE_DEVICES=0 python TRL/Evaluate.py >evaluate.log 2>&1
+
+
 # Train 70M proxy model on 210K samples
 echo "Training 70M model"
 CUDA_VISIBLE_DEVICES=0 python TRL/Train.py --config TRL/large_configs/70M_Full.yml > 70m_pipeline.log 2>&1
