@@ -139,6 +139,7 @@ def select_with_algorithm(losses, sources, n_samples, n_clusters, num_epochs, al
                 remaining -= len(source_indices)
         
         print(f"Epoch {epoch} total: {len(selected_indices)} samples")
+        np.random.shuffle(selected_indices)
         all_selected_indices.extend(selected_indices)
     
     print(f"Total selected indices across all epochs: {len(all_selected_indices)}")
